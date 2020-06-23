@@ -4,21 +4,46 @@ use tokenizer::Token::*;
 mod tokenizer;
 
 pub struct Parser {
-    pub stack: Vec<Token>,
+    stack: Vec<Token>,
 }
 
 impl Parser {
 
+    /// Instantiates parser with empty stack
+    pub fn new() -> Parser {
+        Parser {
+            stack: vec![],
+        }
+    }
+
+    /// Clears the stack
     pub fn clear(&mut self) {
         self.stack.clear();
     }
 
+    /// Displays the nested parsed expression in coloured output
     pub fn display_expression(&mut self) {
         for t in self.stack.iter() {
             println!("{}", t);
         }
     }
 
+    /// Returns if the parsed expression contains a variable
+    pub fn contains_var(&mut self) -> bool {
+        for t in self.stack.iter() {
+            if t.contains_var() {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /// Evaluates the parsed expression with the given value replacing variables
+    pub fn evaluate(&mut self, var: i64) -> i64 {
+        self.stack.pop().unwrap().evaluate(var)
+    }
+
+    /// Parses the given expression for later evaluation
     pub fn parse_expression(&mut self, expr: String) {
         println!("Input: {}", expr);
         let mut i = 0;
@@ -97,3 +122,155 @@ impl Parser {
     }
 }
 
+#[cfg(test)]
+mod test {
+    use super::*;
+    // use super::tokenizer::Token::*;
+    #[test]
+    fn next_token_digit() {
+        let expr = "1+2";
+
+        assert_eq!(Parser::get_next_token(expr, 1), Digit(2));
+    }
+
+    #[test]
+    fn next_token_variable() {
+        let expr = "1+x";
+
+        assert_eq!(Parser::get_next_token(expr, 1), Variable);
+    }
+
+    #[test]
+    fn parse_plus() {
+        let mut parser = Parser::new();
+        let expr = String::from("1+2");
+
+        parser.parse_expression(expr);
+
+        assert_eq!(parser.stack.pop().unwrap(), Addition(Box::new(Digit(1)), Box::new(Digit(2))));
+    }
+
+    #[test]
+    fn parse_minus() {
+        let mut parser = Parser::new();
+        let expr = String::from("1-2");
+
+        parser.parse_expression(expr);
+
+        assert_eq!(parser.stack.pop().unwrap(), Subtraction(Box::new(Digit(1)), Box::new(Digit(2))));
+    }
+
+    #[test]
+    fn parse_mult() {
+        let mut parser = Parser::new();
+        let expr = String::from("1*2");
+
+        parser.parse_expression(expr);
+
+        assert_eq!(parser.stack.pop().unwrap(), Multiplication(Box::new(Digit(1)), Box::new(Digit(2))));
+    }
+
+    #[test]
+    fn parse_division() {
+        let mut parser = Parser::new();
+        let expr = String::from("1/2");
+
+        parser.parse_expression(expr);
+
+        assert_eq!(parser.stack.pop().unwrap(), Division(Box::new(Digit(1)), Box::new(Digit(2))));
+    }
+
+    #[test]
+    fn parse_concatenation() {
+        let mut parser = Parser::new();
+        let expr = String::from("1+2-3*4/5");
+
+        parser.parse_expression(expr);
+
+        // Don't judge pls
+        assert_eq!(parser.stack.pop().unwrap(), Subtraction(Box::new(Addition(Box::new(Digit(1)), Box::new(Digit(2)))), Box::new(Division(Box::new(Multiplication(Box::new(Digit(3)), Box::new(Digit(4)))), Box::new(Digit(5))))));
+    }
+
+    #[test]
+    fn evaluate_plus() {
+        let mut parser = Parser {
+            stack: vec![Addition(Box::new(Digit(10)), Box::new(Variable))]
+        };
+
+        assert_eq!(15, parser.evaluate(5));
+    }
+
+    #[test]
+    fn evaluate_minus() {
+        let mut parser = Parser {
+            stack: vec![Subtraction(Box::new(Digit(10)), Box::new(Variable))]
+        };
+
+        assert_eq!(5, parser.evaluate(5));
+    }
+
+    #[test]
+    fn evaluate_mult() {
+        let mut parser = Parser {
+            stack: vec![Multiplication(Box::new(Digit(10)), Box::new(Variable))]
+        };
+
+        assert_eq!(50, parser.evaluate(5));
+    }
+
+    #[test]
+    fn evaluate_division() {
+        let mut parser = Parser {
+            stack: vec![Division(Box::new(Digit(10)), Box::new(Variable))]
+        };
+
+        assert_eq!(2, parser.evaluate(5));
+    }
+
+    #[test]
+    fn evaluate_concatenation() {
+        let mut parser = Parser {
+            stack: vec![Subtraction(Box::new(Addition(Box::new(Variable), Box::new(Digit(2)))), Box::new(Division(Box::new(Multiplication(Box::new(Digit(3)), Box::new(Digit(4)))), Box::new(Digit(5)))))]
+        };
+
+        assert_eq!(5, parser.evaluate(5));
+    }
+
+    #[test]
+    fn contains_var_false() {
+        let mut parser = Parser {
+            stack: vec![Addition(Box::new(Digit(10)), Box::new(Digit(2)))]
+        };
+
+        assert!(!parser.contains_var());
+    }
+
+    #[test]
+    fn contains_var_true() {
+        let mut parser = Parser {
+            stack: vec![Addition(Box::new(Digit(10)), Box::new(Variable))]
+        };
+
+        assert!(parser.contains_var());
+    }
+
+    #[test]
+    fn contains_var_nested() {
+        let mut parser = Parser {
+            stack: vec![Addition(Box::new(Digit(10)), Box::new(Multiplication(Box::new(Variable), Box::new(Digit(2)))))]
+        };
+
+        assert!(parser.contains_var());
+    }
+
+    #[test]
+    fn clear_stack() {
+        let mut parser = Parser {
+            stack: vec![Addition(Box::new(Digit(10)), Box::new(Variable))]
+        };
+
+        parser.clear();
+
+        assert!(parser.stack.is_empty());
+    }
+}
