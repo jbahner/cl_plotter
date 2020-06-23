@@ -22,6 +22,7 @@ fn main() {
             std::process::exit(0);
         }
         p.parse_expression(input);
-        // println!("Input: {}", input);
+        p.display_expression();
+        p.clear();
     }
 }
