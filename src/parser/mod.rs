@@ -7,7 +7,7 @@ pub struct Parser {
     pub stack: Vec<Token>,
 }
 
-impl Parser {   
+impl Parser {
 
     pub fn parse_expression(&mut self, expr: String) {
         println!("Input: {}", expr);
@@ -17,6 +17,7 @@ impl Parser {
             println!("char is {} at {}", char, i);
             match char {
                 ' ' => {
+                    i += 1;
                     continue;
                 }
                 '+' => {
