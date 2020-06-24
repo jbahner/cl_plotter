@@ -39,7 +39,7 @@ impl Parser {
     }
 
     /// Evaluates the parsed expression with the given value replacing variables
-    pub fn evaluate(&mut self, var: i64) -> i64 {
+    pub fn evaluate(&mut self, var: f32) -> f32 {
         self.stack.pop().unwrap().evaluate(var)
     }
 

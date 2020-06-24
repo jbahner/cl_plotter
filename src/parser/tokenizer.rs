@@ -16,10 +16,10 @@ pub enum Token {
 
 impl Token {
     /// Evaluates the token's expression with the given value replacing variables
-    pub fn evaluate(self, var: i64) -> i64{
+    pub fn evaluate(self, var: f32) -> f32{
         match self {
             Variable => {var},
-            Digit(d) => { d },
+            Digit(d) => { d as f32},
             Addition(first, second) => {
                 first.evaluate(var) + second.evaluate(var)
             },

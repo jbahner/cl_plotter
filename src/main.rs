@@ -32,9 +32,9 @@ fn main() {
             if let Some('\r') = input.chars().next_back() {
                 input.pop();
             }
-            println!("{}", p.evaluate(input.pop().unwrap().to_digit(10).expect("Invalid number") as i64));
+            println!("{}", p.evaluate(input.parse().expect("Fucking retard")));
         } else {
-            p.evaluate(0);
+            p.evaluate(0.0);
         }
         p.clear();
     }
