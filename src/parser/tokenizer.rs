@@ -7,7 +7,7 @@ use colored::*;
 /// Token enum containing all allowed input tokens
 pub enum Token {
     Variable,
-    Digit(i64),
+    Digit(f32),
     Addition(Box<Token>, Box<Token>),
     Subtraction(Box<Token>, Box<Token>),
     Multiplication(Box<Token>, Box<Token>),

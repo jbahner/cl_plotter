@@ -32,7 +32,7 @@ fn main() {
             if let Some('\r') = input.chars().next_back() {
                 input.pop();
             }
-            println!("{}", p.evaluate(input.parse().expect("Fucking retard")));
+            println!("{}", p.evaluate(input.parse().expect("Invalid number")));
         } else {
             p.evaluate(0.0);
         }
