@@ -9,7 +9,11 @@ pub struct CliInterface {
 }
 
 impl CliInterface {
-    // use terminal_size::{Width, Height, terminal_size};
+
+    const UI_LEFT_MARGIN: u16 = 5;
+    const UI_HEADER_SPACE: u16 = 10;
+    const UI_FOOTER_SPACE: u16 = 5;
+
 
     pub fn render_functions() {
         // functions: Vec<fn(i64) -> i64>
@@ -26,11 +30,15 @@ impl CliInterface {
         let size = terminal_size();
         if let Some((Width(w), Height(h))) = size {
             for x in 0..h - 1 {
-                if (x < 5) {
+                if (x < Self::UI_HEADER_SPACE) {
                     Self::draw_header()
-                } else if (x == h - 5) {
+                } else if (x == h - (Self::UI_FOOTER_SPACE + 3)) {
                     Self::draw_x_axis(w as i32)
-                } else if (x > h - 5) {
+                } else if (x == h - (Self::UI_FOOTER_SPACE + 2)) {
+                    Self::draw_x_axis_legend(w as i32)
+                } else if (x == h - (Self::UI_FOOTER_SPACE + 1)) {
+                    Self::draw_x_axis_legend_numbers(w as i32)
+                } else if (x >= h - Self::UI_FOOTER_SPACE) {
                     Self::draw_footer()
                 } else {
                     println!("  |");
@@ -44,14 +52,38 @@ impl CliInterface {
     fn draw_header() {
         println!("Header")
     }
+
     fn draw_footer() {
         println!("Footer")
     }
+
     fn draw_x_axis(width: i32) {
         print!("  ");
 
         for x in 2..width / 2 {
             print!("__");
+        }
+        println!("")
+    }
+
+    fn draw_x_axis_legend(width: i32) {
+        print!("  ");
+
+        for x in 2..width / 4 {
+            print!("   |");
+        }
+        println!("")
+    }
+
+    fn draw_x_axis_legend_numbers(width: i32) {
+        print!("  ");
+
+        for x in 2..width / 4 {
+            if (x < 10) {
+                print!("   {}", x);
+            } else {
+                print!("  {}", x);
+            }
         }
         println!("")
     }
