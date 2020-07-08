@@ -30,15 +30,15 @@ impl CliInterface {
         let size = terminal_size();
         if let Some((Width(w), Height(h))) = size {
             for x in 0..h - 1 {
-                if (x < Self::UI_HEADER_SPACE) {
+                if x < Self::UI_HEADER_SPACE {
                     Self::draw_header()
-                } else if (x == h - (Self::UI_FOOTER_SPACE + 3)) {
+                } else if x == h - (Self::UI_FOOTER_SPACE + 3) {
                     Self::draw_x_axis(w as i32)
-                } else if (x == h - (Self::UI_FOOTER_SPACE + 2)) {
+                } else if x == h - (Self::UI_FOOTER_SPACE + 2) {
                     Self::draw_x_axis_legend(w as i32)
-                } else if (x == h - (Self::UI_FOOTER_SPACE + 1)) {
+                } else if x == h - (Self::UI_FOOTER_SPACE + 1) {
                     Self::draw_x_axis_legend_numbers(w as i32)
-                } else if (x >= h - Self::UI_FOOTER_SPACE) {
+                } else if x >= h - Self::UI_FOOTER_SPACE {
                     Self::draw_footer()
                 } else {
                     println!("  |");
@@ -63,7 +63,7 @@ impl CliInterface {
         for x in 2..width / 2 {
             print!("__");
         }
-        println!("")
+        println!()
     }
 
     fn draw_x_axis_legend(width: i32) {
@@ -72,20 +72,20 @@ impl CliInterface {
         for x in 2..width / 4 {
             print!("   |");
         }
-        println!("")
+        println!()
     }
 
     fn draw_x_axis_legend_numbers(width: i32) {
         print!("  ");
 
         for x in 2..width / 4 {
-            if (x < 10) {
+            if x < 10 {
                 print!("   {}", x);
             } else {
                 print!("  {}", x);
             }
         }
-        println!("")
+        println!()
     }
 
     fn plot_graph() {}
