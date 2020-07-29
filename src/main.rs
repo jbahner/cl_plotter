@@ -1,5 +1,8 @@
 use std::io::{stdin, stdout, Write};
+
 mod parser;
+mod data;
+
 fn main() {
     let mut p = parser::Parser::new();
     loop {
@@ -21,21 +24,10 @@ fn main() {
         }
         p.parse_expression(input);
         p.display_expression();
-        if p.contains_var() {
-            print!("Evaluate with value: ");
-            let _ = stdout().flush();
-            input = String::new();
-            stdin().read_line(&mut input).expect("Retard!");
-            if let Some('\n') = input.chars().next_back() {
-                input.pop();
-            }
-            if let Some('\r') = input.chars().next_back() {
-                input.pop();
-            }
-            println!("{}", p.evaluate(input.parse().expect("Invalid number")));
-        } else {
-            p.evaluate(0.0);
-        }
+
+        // Fill data
+        data::Data::new(p.clone().stack.first().unwrap()).evaluate();
+
         p.clear();
     }
 }

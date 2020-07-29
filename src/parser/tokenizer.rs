@@ -19,7 +19,7 @@ impl Token {
     pub fn evaluate(self, var: f32) -> f32{
         match self {
             Variable => {var},
-            Digit(d) => { d as f32},
+            Digit(d) => { d},
             Addition(first, second) => {
                 first.evaluate(var) + second.evaluate(var)
             },
@@ -49,6 +49,27 @@ impl Token {
             }
             _ => {
                 false
+            }
+        }
+    }
+}
+
+impl Clone for Token {
+    fn clone(&self) -> Self {
+        match self {
+            Variable => Variable,
+            Digit(v) => Digit(v.clone()),
+            Addition(first, second) => {
+                Addition(first.clone(), second.clone())
+            },
+            Subtraction(first, second) => {
+                Subtraction(first.clone(), second.clone())
+            },
+            Multiplication(first, second) => {
+                Multiplication(first.clone(), second.clone())
+            },
+            Division(first, second) => {
+                Division(first.clone(), second.clone())
             }
         }
     }

@@ -1,11 +1,11 @@
 use tokenizer::*;
 use tokenizer::Token::*;
 
-mod tokenizer;
+pub mod tokenizer;
 
 /// Used for parsing expressions to be evaluated
 pub struct Parser {
-    stack: Vec<Token>,
+    pub stack: Vec<Token>,
 }
 
 impl Parser {
@@ -127,6 +127,14 @@ impl Parser {
             (Digit(float.parse().unwrap()), i)
         } else {
             (Variable, i)
+        }
+    }
+}
+
+impl Clone for Parser {
+    fn clone(&self) -> Self {
+        Parser {
+            stack: self.stack.clone(),
         }
     }
 }
