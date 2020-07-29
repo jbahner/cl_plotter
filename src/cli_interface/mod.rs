@@ -1,9 +1,10 @@
 use std::io::{stdin, stdout, Write};
+use std::ops::Rem;
 
 use terminal_size::{Height, terminal_size, Width};
 
-use super::parser;
 use super::data;
+use super::parser;
 
 pub struct CliInterface {
     pub x_min: i64,
@@ -11,33 +12,42 @@ pub struct CliInterface {
     pub y_min: i64,
     pub y_max: i64,
     pub calculation_density: i64,
+
 }
 
 impl CliInterface {
     const UI_LEFT_MARGIN: u16 = 5;
-    const UI_HEADER_SPACE: u16 = 10;
+    // Header Space should be an even number
+    const UI_HEADER_SPACE: u16 = 6;
     const UI_FOOTER_SPACE: u16 = 5;
+    const MINIMUM_WIDTH: u16 = 85;
 
     pub fn cli_interface_loop() {
         let mut p = parser::Parser::new();
 
         loop {
             let mut input = String::new();
+            Self::draw_screen(&"start".to_string());
             print!("Type in an expression: ");
             let _ = stdout().flush();
+
             stdin().read_line(&mut input).expect("Retard!");
+
             if let Some('\n') = input.chars().next_back() {
                 input.pop();
             }
             if let Some('\r') = input.chars().next_back() {
                 input.pop();
             }
+
             // TODO: Validate input format: only one variable allowed
             // TODO: here comes parsing of typed in command
+
             if input == String::from("exit") {
                 println!("Bye, have a beautiful time!");
                 std::process::exit(0);
             }
+
             p.parse_expression(input);
             p.display_expression();
 
@@ -56,9 +66,66 @@ impl CliInterface {
         Self::draw_ui()
     }
 
-    fn draw_start_screen() {
 
+    fn draw_screen(s: &str) {
+        let size = terminal_size();
+        if let Some((Width(w), Height(h))) = size {
+            if w < Self::MINIMUM_WIDTH {
+                panic!("Terminal window too small please make it wider!")
+            }
+
+            match &s[..] {
+                "start" => Self::draw_start_screen(w, h),
+                _ => println!("Unknown draw screen command!")
+            }
+        }
     }
+
+
+    fn draw_start_screen(width: u16, height: u16) {
+        let mut screen = String::new();
+
+        // Draw Header Line
+        for x in 0..width {
+            screen += &String::from("_");
+        }
+        screen += &String::from("\n");
+
+        // Draw Header Space above Headline
+        for x in 1..(CliInterface::UI_HEADER_SPACE / 2) {
+            screen += &String::from("\n");
+        }
+        // Draw Headline
+        screen += &Self::generate_centered_text_string(width, &String::from("Welcome to the cl_plotter!"));
+        // Draw Header Space below Headline
+        for x in 0..(CliInterface::UI_HEADER_SPACE / 2){
+            screen += &String::from("\n");
+        }
+
+        print!("{}", screen);
+    }
+
+
+    /// Return String containing message centered by white spaces
+    fn generate_centered_text_string(width: u16, message: &str) -> String {
+        if width < message.len() as u16 {
+            panic!("Centered context message is too wide to be displayed");
+        }
+
+        let mut str = String::new();
+
+        for x in 0..((width - message.len() as u16) / 2) {
+            str += &String::from(" ");
+        }
+
+        str += message;
+
+        for x in 0..((width - message.len() as u16) / 2) {
+            str += &String::from(" ");
+        }
+        return str;
+    }
+
 
     fn draw_ui() {
         Self::draw_frame()
