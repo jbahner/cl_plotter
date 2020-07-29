@@ -19,7 +19,7 @@ impl CliInterface {
     const UI_LEFT_MARGIN: u16 = 5;
     // Header Space should be an even number
     const UI_HEADER_SPACE: u16 = 6;
-    const UI_FOOTER_SPACE: u16 = 5;
+    const UI_FOOTER_SPACE: u16 = 3;
     const MINIMUM_WIDTH: u16 = 85;
 
     pub fn cli_interface_loop() {
@@ -84,29 +84,53 @@ impl CliInterface {
 
     fn draw_start_screen(width: u16, height: u16) {
         let mut screen = String::new();
+        let mut printed_lines = 0;
 
         // Draw Header Line
-        for x in 0..width {
-            screen += &String::from("_");
-        }
+        screen += &std::iter::repeat("_").take(width as usize).collect::<String>();
         screen += &String::from("\n");
 
         // Draw Header Space above Headline
-        for x in 1..(CliInterface::UI_HEADER_SPACE / 2) {
-            screen += &String::from("\n");
-        }
-        // Draw Headline
-        screen += &Self::generate_centered_text_string(width, &String::from("Welcome to the cl_plotter!"));
-        // Draw Header Space below Headline
-        for x in 0..(CliInterface::UI_HEADER_SPACE / 2){
+        for _ in 1..(CliInterface::UI_HEADER_SPACE / 2) {
             screen += &String::from("\n");
         }
 
+        // Draw Headline
+        screen += &Self::generate_centered_text_string(width, &String::from("Welcome to the cl_plotter!"));
+
+        // Draw Header Space below Headline
+        for _ in 0..(CliInterface::UI_HEADER_SPACE / 2){
+            screen += &String::from("\n");
+        }
+
+        let main_body_height = CliInterface::UI_HEADER_SPACE + CliInterface::UI_FOOTER_SPACE + 2;
+        // TODO do this more often
+        let left_padding = std::iter::repeat(" ").take(10).collect::<String>();
+        // Draw Main Body
+        for _ in 0..(height - main_body_height) {
+            screen += &format!("{}{}", left_padding.clone(), String::from("main\n"));
+            printed_lines += 1;
+        }
+
+
+        // Draw Footer
+        for _ in 0..CliInterface::UI_FOOTER_SPACE {
+            screen += &String::from("\n");
+        }
+        // for _ in 0..width {
+        //     screen += &String::from("_");
+        // }
+        // screen += &String::from("\n");
+        // printed_lines += 1;
+
+
         print!("{}", screen);
+        // println!("printed Lines {}", printed_lines);
     }
 
 
     /// Return String containing message centered by white spaces
+    /// Panics when Message is longer than the width of the terminal
     fn generate_centered_text_string(width: u16, message: &str) -> String {
         if width < message.len() as u16 {
             panic!("Centered context message is too wide to be displayed");
@@ -114,15 +138,14 @@ impl CliInterface {
 
         let mut str = String::new();
 
-        for x in 0..((width - message.len() as u16) / 2) {
+        for _ in 0..((width - message.len() as u16) / 2) {
             str += &String::from(" ");
         }
 
         str += message;
 
-        for x in 0..((width - message.len() as u16) / 2) {
-            str += &String::from(" ");
-        }
+        str += &String::from("\n");
+
         return str;
     }
 
