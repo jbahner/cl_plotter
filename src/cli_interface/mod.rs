@@ -1,11 +1,15 @@
+use std::fmt::format;
 use std::io::{stdin, stdout, Write};
+use std::iter;
 use std::ops::Rem;
+use std::thread::current;
 
 use terminal_size::{Height, terminal_size, Width};
 
+use crate::parser::Parser;
+
 use super::data;
 use super::parser;
-use crate::parser::Parser;
 
 pub struct CliInterface {
     pub x_min: i64,
@@ -16,18 +20,21 @@ pub struct CliInterface {
 
 }
 
+thread_local! {static mut current_state: &str = "start";}
+
 impl CliInterface {
     const UI_LEFT_MARGIN: u16 = 8;
     // Header Space should be an even number
     const UI_HEADER_SPACE: u16 = 6;
-    const UI_FOOTER_SPACE: u16 = 5;
+    const UI_FOOTER_SPACE: u16 = 6;
     const MINIMUM_WIDTH: u16 = 85;
 
 
     pub fn cli_interface_loop() {
         let mut p = parser::Parser::new();
+        // TODO change this back to "start"
 
-        Self::draw_screen(&"start".to_string());
+        Self::draw_screen(current_state);
 
         loop {
             let mut input = String::new();
@@ -50,40 +57,37 @@ impl CliInterface {
             p = Self::process_input(input, p);
 
 
-
             // Fill data
-            data::Data::new(p.clone().stack.first().unwrap()).evaluate();
+            match p.clone().stack.first() {
+                None => continue,
+                Some(data) => data::Data::new(data).evaluate()
+            }
+
 
             p.clear();
         }
     }
 
     fn process_input(input: String, mut parser: Parser) -> Parser {
-
         let input_arguments: Vec<&str> = input.split(" ").collect();
 
         match &input_arguments.get(0).unwrap()[..] {
-            "plot" => {
+            "input" => {
                 let given_function = input_arguments[1..].join(" ");
                 parser.parse_expression(given_function);
                 parser.display_expression();
-            },
+            }
+            "plot" => {
+                Self::draw_screen("plot")
+            }
             "exit" => {
                 println!("Bye, have a beautiful time!");
                 std::process::exit(0);
-            },
+            }
             _ => println!("Unknown command, type \"help\" for a List of available commands!")
         }
 
         return parser;
-    }
-
-
-    pub fn render_functions() {
-        // functions: Vec<fn(i64) -> i64>
-
-        // let first_function = functions.first().expect("Failed");
-        Self::draw_ui()
     }
 
 
@@ -96,6 +100,8 @@ impl CliInterface {
 
             match &s[..] {
                 "start" => Self::draw_start_screen(w, h),
+                "plot" => Self::draw_plot(w, h),
+
                 _ => println!("Unknown draw screen command!")
             }
         }
@@ -107,7 +113,7 @@ impl CliInterface {
         let mut printed_lines = 0;
 
         // Draw Header Line
-        screen += &std::iter::repeat("_").take(width as usize).collect::<String>();
+        screen += &iter::repeat("_").take(width as usize).collect::<String>();
         screen += &String::from("\n");
 
         // Draw Header Space above Headline
@@ -119,7 +125,7 @@ impl CliInterface {
         screen += &Self::generate_centered_text_string(width, &String::from("Welcome to cl_plotter!"));
 
         // Draw Header Space below Headline
-        for _ in 0..(CliInterface::UI_HEADER_SPACE / 2){
+        for _ in 0..(CliInterface::UI_HEADER_SPACE / 2) {
             screen += &String::from("\n");
         }
 
@@ -127,15 +133,15 @@ impl CliInterface {
         // Draw Main Body                                    "+ 2" is a magic number to make the UI fit the terminal
         let main_body_height = height - (CliInterface::UI_HEADER_SPACE + CliInterface::UI_FOOTER_SPACE + 2);
         // TODO do this more often
-        let left_padding = std::iter::repeat(" ").take(Self::UI_LEFT_MARGIN as usize).collect::<String>();
+        let left_padding = iter::repeat(" ").take(Self::UI_LEFT_MARGIN as usize).collect::<String>();
         screen += &format!("{}{}",
                            left_padding.clone(),
-                           String::from("You can plot your linear functions here:\n"));
+                           String::from("You can input your linear functions here:\n"));
         printed_lines += 1;
 
         screen += &format!("{}{}",
                            left_padding.clone(),
-                           String::from("\"plot <your function>\"\n\n"));
+                           String::from("\"input <your function>\"\n\n"));
         printed_lines += 2;
 
 
@@ -146,7 +152,17 @@ impl CliInterface {
 
         screen += &format!("{}{}",
                            left_padding.clone(),
-                           String::from("\"redraw\"\n\n"));
+                           String::from("TODO \"redraw\"\n\n"));
+        printed_lines += 2;
+
+        screen += &format!("{}{}",
+                           left_padding.clone(),
+                           String::from("You can plot the current function:\n"));
+        printed_lines += 1;
+
+        screen += &format!("{}{}",
+                           left_padding.clone(),
+                           String::from("\"plot\"\n\n"));
         printed_lines += 2;
 
 
@@ -165,13 +181,13 @@ impl CliInterface {
         }
 
 
-
         // Draw Footer
-        for _ in 0..(CliInterface::UI_FOOTER_SPACE - 2) {
+        for _ in 0..(CliInterface::UI_FOOTER_SPACE - 4) {
             screen += &String::from("\n");
         }
 
         print!("{}", screen);
+        println!("{}\n", iter::repeat("_").take(width as usize).collect::<String>());
     }
 
 
@@ -196,71 +212,90 @@ impl CliInterface {
     }
 
 
-    fn draw_ui() {
-        Self::draw_frame()
-    }
+    // fn draw_ui() {
+    //     Self::draw_frame()
+    // }
 
-    fn draw_frame() {
+    fn draw_plot(width: u16, height: u16) {
         let size = terminal_size();
-        if let Some((Width(w), Height(h))) = size {
-            for x in 0..h - 1 {
+        let mut screen = String::new();
+
+        if let Some((Width(width), Height(height))) = size {
+            for x in 0..height - 3 {
                 if x < Self::UI_HEADER_SPACE {
-                    Self::draw_header()
-                } else if x == h - (Self::UI_FOOTER_SPACE + 3) {
-                    Self::draw_x_axis(w as i32)
-                } else if x == h - (Self::UI_FOOTER_SPACE + 2) {
-                    Self::draw_x_axis_legend(w as i32)
-                } else if x == h - (Self::UI_FOOTER_SPACE + 1) {
-                    Self::draw_x_axis_legend_numbers(w as i32)
-                } else if x >= h - Self::UI_FOOTER_SPACE {
-                    Self::draw_footer()
+                    screen += &Self::draw_header(x, width)
+                } else if x == height - (Self::UI_FOOTER_SPACE + 3) {
+                    screen += &Self::draw_x_axis(width as i32)
+                } else if x == height - (Self::UI_FOOTER_SPACE + 2) {
+                    screen += &Self::draw_x_axis_legend(width as i32)
+                } else if x == height - (Self::UI_FOOTER_SPACE + 1) {
+                    screen += &Self::draw_x_axis_legend_numbers(width as i32)
+                } else if x >= height - Self::UI_FOOTER_SPACE {
+                    screen += &Self::draw_footer()
                 } else {
-                    println!("  |");
+                    screen += "  |\n";
                 }
             }
+            print!("{}", screen);
         } else {
             println!("Unable to get terminal size");
         }
     }
 
-    fn draw_header() {
-        println!("Header")
-    }
-
-    fn draw_footer() {
-        println!("Footer")
-    }
-
-    fn draw_x_axis(width: i32) {
-        print!("  ");
-
-        for x in 2..width / 2 {
-            print!("__");
+    fn draw_header(current_height: u16, width: u16) -> String {
+        if current_height == 2 {
+            return format!("{}", Self::generate_centered_text_string(width, "Your Plot"));
         }
-        println!()
+        return format!("{}", "\n");
     }
 
-    fn draw_x_axis_legend(width: i32) {
-        print!("  ");
-
-        for x in 2..width / 4 {
-            print!("   |");
-        }
-        println!()
+    fn draw_footer() -> String {
+        return String::from("Footer\n");
     }
 
-    fn draw_x_axis_legend_numbers(width: i32) {
-        print!("  ");
+    fn draw_x_axis(width: i32) -> String {
+        // TODO Padding here
+        return format!("{}{}",
+                       "  ",
+                       iter::repeat("_").take((width - 2) as usize).collect::<String>() + "\n");
+
+        // print!("  ");
+        //
+        // for x in 2..width / 2 {
+        //     print!("__");
+        // }
+        // println!()
+    }
+
+    fn draw_x_axis_legend(width: i32) -> String {
+        return format!("{}{}",
+                       "  ",
+                       iter::repeat("   |").take(((width - 2) / 4) as usize).collect::<String>() + "\n");
+        // print!("  ");
+        //
+        // for x in 2..width / 4 {
+        //     print!("   |");
+        // }
+        // println!()
+    }
+
+    fn draw_x_axis_legend_numbers(width: i32) -> String {
+        let mut screen = String::new();
+
+        screen += "  ";
 
         for x in 2..width / 4 {
             if x < 10 {
-                print!("   {}", x);
+                screen += &format!("{}{}",
+                                   "   ".to_string(),
+                                   x);
             } else {
-                print!("  {}", x);
+                screen += &format!("{}{}",
+                                   "  ".to_string(),
+                                   x);
             }
         }
-        println!()
+        screen += "\n";
+        return screen;
     }
-
-
 }
