@@ -21,6 +21,11 @@ impl Data<'_> {
         }
     }
 
+    /// Evaluates the expression for a single value
+    pub fn evaluate_single(self, val : f32) -> f32 {
+        self.expr.clone().evaluate(val)
+    }
+
     /// Calculates the interval size for the given amount of values in the given range
     fn interval_size(&self) -> f32 {
         (self.max - self.min).div(self.n as f32 - 1.0)
@@ -72,6 +77,14 @@ mod test {
         data.evaluate();
 
         assert_eq!(21, data.data.len());
+    }
+
+    #[test]
+    fn evaluate_single() {
+        let expr = Token::Addition(Box::new(Token::Variable), Box::new(Digit(3.0)));
+        let mut data = Data::new(&expr, -10.0, 10.0, 21);
+
+        assert_eq!(47.0, data.evaluate_single(44.0).round());
     }
 
     #[test]
