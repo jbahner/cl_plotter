@@ -14,15 +14,16 @@ use super::data;
 use super::parser;
 
 pub struct CliInterface {
-    pub x_min: i64,
-    pub x_max: i64,
-    pub y_min: i64,
-    pub y_max: i64,
+
     pub calculation_density: i64,
 
 }
 
 static mut current_state: &str = "start";
+static mut X_MIN: i64 = 0;
+static mut X_MAX: i64 = 0;
+static mut Y_MIN: i64 = 0;
+static mut Y_MAX: i64 = 0;
 
 impl CliInterface {
     const UI_LEFT_MARGIN: u16 = 8;
@@ -31,6 +32,8 @@ impl CliInterface {
     const UI_HEADER_SPACE: u16 = 6;
     const UI_FOOTER_SPACE: u16 = 6;
     const MINIMUM_WIDTH: u16 = 85;
+
+
 
 
     pub fn cli_interface_loop() {
@@ -60,7 +63,7 @@ impl CliInterface {
 
             p = Self::process_input(input, p.clone());
 
-
+            let mut calculated_points: Vec<f64> = vec!();
             // Fill data
             match p.clone().stack.first() {
                 None => continue,
@@ -84,6 +87,7 @@ impl CliInterface {
                 // parser.display_expression();
             }
             "ls" => unsafe {
+                // TODO implement ls
                 println!("All saved Functions:");
                 // for x in 0..func_vec.len() {
                 //     println!("  {}{}", x, func_vec.get(x).unwrap());
@@ -255,17 +259,22 @@ impl CliInterface {
             for x in 0..height - 3 {
                 if x < Self::UI_HEADER_SPACE {
                     screen += &Self::draw_header(x, width)
-                } else if x == height - (Self::UI_FOOTER_SPACE + 3) {
+                }
+
+
+                else if x == height - (Self::UI_FOOTER_SPACE + 3) {
                     screen += &Self::draw_x_axis(width as i32)
                 } else if x == height - (Self::UI_FOOTER_SPACE + 2) {
                     screen += &Self::draw_x_axis_legend(width as i32)
                 } else if x == height - (Self::UI_FOOTER_SPACE + 1) {
                     screen += "Numbers\n";
                         // &Self::draw_x_axis_legend_numbers(width as i32)
+
+
                 } else if x >= height - Self::UI_FOOTER_SPACE {
                     screen += &Self::draw_footer()
                 } else {
-                    screen += &(iter::repeat(" ").take(Self::UI_LEFT_MARGIN as usize).collect::<String>() + "|\n");
+                    screen += &(iter::repeat("X").take(Self::UI_LEFT_MARGIN as usize).collect::<String>() + "|\n");
                 }
             }
             print!("{}", screen);
