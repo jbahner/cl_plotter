@@ -1,5 +1,5 @@
 use crate::parser::tokenizer::Token;
-use std::ops::{Div, Add};
+use std::ops::{Div, Add, Sub};
 
 pub struct Data<'a> {
     expr: &'a Token,
@@ -60,6 +60,16 @@ impl Data<'_> {
     /// Calculates the maximum of the data in range [from, to)
     pub fn max(self, from: f32, to: f32) -> f32 {
         self.data[self.calculate_index(from)..self.calculate_index(to)].iter().cloned().fold(std::f32::MIN, f32::max)
+    }
+
+    pub fn differentiate(self) -> Vec<f32> {
+        let interval = self.interval_size();
+        let mut vector : Vec<f32> = vec![];
+        for (i, val) in self.data.iter().enumerate() {
+            let x = self.min + (i as f32 * interval);
+            vector.push(self.expr.clone().evaluate(x + interval).sub(self.expr.clone().evaluate(x - interval)).div(2.0 * interval))
+        }
+        vector
     }
 }
 
