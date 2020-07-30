@@ -110,6 +110,7 @@ impl Parser {
         }
     }
 
+    /// Retrieves the first token and the index of it in the expr String
     fn get_next_token(expr : &str) -> (Token, usize) {
         let mut i = 1;
         let char = expr.chars().nth(0).unwrap();
