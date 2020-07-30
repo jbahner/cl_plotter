@@ -22,7 +22,7 @@ static mut current_state: &str = "start";
 static mut X_MIN: i64 = 0;
 static mut X_MAX: i64 = 10;
 static mut Y_MIN: i64 = 0;
-static mut Y_MAX: i64 = 10;
+static mut Y_MAX: i64 = 20;
 
 impl CliInterface {
     const UI_LEFT_MARGIN: u16 = 8;
@@ -280,7 +280,10 @@ impl CliInterface {
         let graph_width = width - (Self::UI_LEFT_MARGIN + Self::UI_RIGHT_MARGIN + 1);
         let graph_height = height - (Self::UI_HEADER_SPACE + Self::UI_FOOTER_SPACE + 3);
 
-        let function_vec = vec![5; graph_width as usize];
+        let function_vec = vec![15; graph_width as usize];
+
+
+
         let mut to_be_plotted_indices: Vec<u16> = vec!();
 
 
@@ -326,8 +329,20 @@ impl CliInterface {
             // &Self::draw_x_axis_legend_numbers(width as i32)
         } else {
             // Y Axis
-            screen += &(iter::repeat(" ").take(Self::UI_LEFT_MARGIN as usize).collect::<String>()
-                + "|\n");
+            screen += &(iter::repeat(" ").take(Self::UI_LEFT_MARGIN as usize).collect::<String>() + "|");
+
+            if to_be_plotted_indices.len() != 0 {
+                let mut before_width_index = 0;
+
+                for plot_val in to_be_plotted_indices {
+                    screen += &(iter::repeat(" ").take(((plot_val + 1) - before_width_index - 1) as usize).collect::<String>());
+                    screen += &Self::PLOT_GRAPH_CHARACTER.to_string();
+                    before_width_index = plot_val + 1;
+                }
+
+            }
+
+            screen += "\n";
         }
         return screen;
     }
