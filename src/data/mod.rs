@@ -20,7 +20,7 @@ impl Data<'_> {
             data: vec![],
         }
     }
-    
+
     /// Calculates the interval size for the given amount of values in the given range
     fn interval_size(&self) -> f32 {
         (self.max - self.min).div(self.n as f32 - 1.0)
@@ -29,7 +29,6 @@ impl Data<'_> {
     /// Calculates the index of a value in the data vector
     fn calculate_index(&self, val: f32) -> usize {
         let intervals = ((val - self.min).div(self.interval_size())).floor() as usize;
-        println!("data: {}, intervals: {}", self.data.len(), intervals);
         if intervals > self.data.len() {
             self.data.len()
         } else {
@@ -45,7 +44,6 @@ impl Data<'_> {
         let step = self.interval_size();
         for i in 0..self.n {
             self.data.push(self.expr.clone().evaluate(self.min + (i as f32 * step)));
-            println!("x: {}, y: {}", self.min + (i as f32 * step), self.data.last().unwrap());
         }
     }
 
