@@ -14,26 +14,25 @@ use super::data;
 use super::parser;
 
 pub struct CliInterface {
-
     pub calculation_density: i64,
 
 }
 
 static mut current_state: &str = "start";
 static mut X_MIN: i64 = 0;
-static mut X_MAX: i64 = 0;
+static mut X_MAX: i64 = 10;
 static mut Y_MIN: i64 = 0;
-static mut Y_MAX: i64 = 0;
+static mut Y_MAX: i64 = 10;
 
 impl CliInterface {
     const UI_LEFT_MARGIN: u16 = 8;
     const UI_RIGHT_MARGIN: u16 = 6;
+
     // Header Space should be an even number
     const UI_HEADER_SPACE: u16 = 6;
     const UI_FOOTER_SPACE: u16 = 6;
+
     const MINIMUM_WIDTH: u16 = 85;
-
-
 
 
     pub fn cli_interface_loop() {
@@ -65,10 +64,10 @@ impl CliInterface {
 
             let mut calculated_points: Vec<f64> = vec!();
             // Fill data
-            match p.clone().stack.first() {
-                None => continue,
-                Some(data) => data::Data::new(data).evaluate()
-            }
+            // match p.clone().stack.first() {
+            //     None => continue,
+            //     // Some(stack) => data::Data::new(data).evaluate()
+            // }
 
 
             p.clear();
@@ -256,31 +255,53 @@ impl CliInterface {
         let mut screen = String::new();
 
         if let Some((Width(width), Height(height))) = size {
-            for x in 0..height - 3 {
-                if x < Self::UI_HEADER_SPACE {
-                    screen += &Self::draw_header(x, width)
-                }
-
-
-                else if x == height - (Self::UI_FOOTER_SPACE + 3) {
-                    screen += &Self::draw_x_axis(width as i32)
-                } else if x == height - (Self::UI_FOOTER_SPACE + 2) {
-                    screen += &Self::draw_x_axis_legend(width as i32)
-                } else if x == height - (Self::UI_FOOTER_SPACE + 1) {
-                    screen += "Numbers\n";
-                        // &Self::draw_x_axis_legend_numbers(width as i32)
-
-
-                } else if x >= height - Self::UI_FOOTER_SPACE {
+            for current_height in 0..height - 3 {
+                if current_height < Self::UI_HEADER_SPACE {
+                    screen += &Self::draw_header(current_height, width)
+                } else if current_height >= height - Self::UI_FOOTER_SPACE {
                     screen += &Self::draw_footer()
                 } else {
-                    screen += &(iter::repeat("X").take(Self::UI_LEFT_MARGIN as usize).collect::<String>() + "|\n");
+                    screen += &Self::draw_graph_line(width, height, current_height);
                 }
             }
             print!("{}", screen);
         } else {
             println!("Unable to get terminal size");
         }
+    }
+
+
+    fn draw_graph_line(width: u16, height: u16, current_row: u16) -> String {
+
+        let mut screen = String::new();
+        let graph_width = width - (Self::UI_LEFT_MARGIN + Self::UI_RIGHT_MARGIN + 1);
+        let graph_height = height - (Self::UI_HEADER_SPACE + Self::UI_FOOTER_SPACE + 3);
+
+        let constant_vec = vec![5, graph_width];
+
+        if graph_height as i16 - (current_row as i16 - Self::UI_HEADER_SPACE as i16) >= 0 {
+            let mut graph_height_per_pixel: f64;
+            unsafe { graph_height_per_pixel =  (Y_MIN + Y_MAX) as f64 / graph_height as f64; };
+            let current_height_relative_to_graph = graph_height - (current_row - Self::UI_HEADER_SPACE);
+            println!(" Current Value: {}", current_height_relative_to_graph as f64 * graph_height_per_pixel);
+            println!(" Current Position: {}", current_height_relative_to_graph);
+        }
+
+
+
+        if current_row == height - (Self::UI_FOOTER_SPACE + 3) {
+            screen += &Self::draw_x_axis(width as i32)
+        } else if current_row == height - (Self::UI_FOOTER_SPACE + 2) {
+            screen += &Self::draw_x_axis_legend(width as i32)
+        } else if current_row == height - (Self::UI_FOOTER_SPACE + 1) {
+            screen += "X-Axis-Legend\n";
+            // &Self::draw_x_axis_legend_numbers(width as i32)
+        } else {
+            // Y Axis
+            screen += &(iter::repeat(" ").take(Self::UI_LEFT_MARGIN as usize).collect::<String>()
+                + "|\n");
+        }
+        return screen;
     }
 
     fn draw_header(current_height: u16, width: u16) -> String {
