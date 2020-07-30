@@ -66,11 +66,22 @@ impl Data<'_> {
     pub fn differentiate(self) -> Vec<f32> {
         let interval = self.interval_size();
         let mut vector : Vec<f32> = vec![];
-        for (i, val) in self.data.iter().enumerate() {
+        for i in 0..self.data.len() {
             let x = self.min + (i as f32 * interval);
             vector.push(self.expr.clone().evaluate(x + interval).sub(self.expr.clone().evaluate(x - interval)).div(2.0 * interval))
         }
         vector
+    }
+
+    /// Calculates the integral of the expression for the given range
+    pub fn integrate(self, from: f32, to: f32) -> f32 {
+        let dx = self.interval_size() / 1000.0;
+        let mut sum : f32 = 0.0;
+        let num_steps = ((to - from) / dx) as usize;
+        for i in 0..num_steps {
+            sum += self.expr.clone().evaluate(from + (i as f32 * dx)) * dx;
+        }
+        sum
     }
 }
 
