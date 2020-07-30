@@ -5,6 +5,7 @@ use terminal_size::{Height, terminal_size, Width};
 
 use super::data;
 use super::parser;
+use crate::parser::Parser;
 
 pub struct CliInterface {
     pub x_min: i64,
@@ -16,21 +17,24 @@ pub struct CliInterface {
 }
 
 impl CliInterface {
-    const UI_LEFT_MARGIN: u16 = 5;
+    const UI_LEFT_MARGIN: u16 = 8;
     // Header Space should be an even number
     const UI_HEADER_SPACE: u16 = 6;
-    const UI_FOOTER_SPACE: u16 = 3;
+    const UI_FOOTER_SPACE: u16 = 5;
     const MINIMUM_WIDTH: u16 = 85;
+
 
     pub fn cli_interface_loop() {
         let mut p = parser::Parser::new();
 
+        Self::draw_screen(&"start".to_string());
+
         loop {
             let mut input = String::new();
-            Self::draw_screen(&"start".to_string());
-            print!("Type in an expression: ");
+
             let _ = stdout().flush();
 
+            println!("Type commands below!\n");
             stdin().read_line(&mut input).expect("Retard!");
 
             if let Some('\n') = input.chars().next_back() {
@@ -43,19 +47,35 @@ impl CliInterface {
             // TODO: Validate input format: only one variable allowed
             // TODO: here comes parsing of typed in command
 
-            if input == String::from("exit") {
-                println!("Bye, have a beautiful time!");
-                std::process::exit(0);
-            }
+            p = Self::process_input(input, p);
 
-            p.parse_expression(input);
-            p.display_expression();
+
 
             // Fill data
             data::Data::new(p.clone().stack.first().unwrap()).evaluate();
 
             p.clear();
         }
+    }
+
+    fn process_input(input: String, mut parser: Parser) -> Parser {
+
+        let input_arguments: Vec<&str> = input.split(" ").collect();
+
+        match &input_arguments.get(0).unwrap()[..] {
+            "plot" => {
+                let given_function = input_arguments[1..].join(" ");
+                parser.parse_expression(given_function);
+                parser.display_expression();
+            },
+            "exit" => {
+                println!("Bye, have a beautiful time!");
+                std::process::exit(0);
+            },
+            _ => println!("Unknown command, type \"help\" for a List of available commands!")
+        }
+
+        return parser;
     }
 
 
@@ -96,36 +116,62 @@ impl CliInterface {
         }
 
         // Draw Headline
-        screen += &Self::generate_centered_text_string(width, &String::from("Welcome to the cl_plotter!"));
+        screen += &Self::generate_centered_text_string(width, &String::from("Welcome to cl_plotter!"));
 
         // Draw Header Space below Headline
         for _ in 0..(CliInterface::UI_HEADER_SPACE / 2){
             screen += &String::from("\n");
         }
 
-        let main_body_height = CliInterface::UI_HEADER_SPACE + CliInterface::UI_FOOTER_SPACE + 2;
+
+        // Draw Main Body                                    "+ 2" is a magic number to make the UI fit the terminal
+        let main_body_height = height - (CliInterface::UI_HEADER_SPACE + CliInterface::UI_FOOTER_SPACE + 2);
         // TODO do this more often
-        let left_padding = std::iter::repeat(" ").take(10).collect::<String>();
-        // Draw Main Body
-        for _ in 0..(height - main_body_height) {
-            screen += &format!("{}{}", left_padding.clone(), String::from("main\n"));
-            printed_lines += 1;
+        let left_padding = std::iter::repeat(" ").take(Self::UI_LEFT_MARGIN as usize).collect::<String>();
+        screen += &format!("{}{}",
+                           left_padding.clone(),
+                           String::from("You can plot your linear functions here:\n"));
+        printed_lines += 1;
+
+        screen += &format!("{}{}",
+                           left_padding.clone(),
+                           String::from("\"plot <your function>\"\n\n"));
+        printed_lines += 2;
+
+
+        screen += &format!("{}{}",
+                           left_padding.clone(),
+                           String::from("You can redraw the current Ui:\n"));
+        printed_lines += 1;
+
+        screen += &format!("{}{}",
+                           left_padding.clone(),
+                           String::from("\"redraw\"\n\n"));
+        printed_lines += 2;
+
+
+        screen += &format!("{}{}",
+                           left_padding.clone(),
+                           String::from("Or exit by typing:\n"));
+        printed_lines += 1;
+
+        screen += &format!("{}{}",
+                           left_padding.clone(),
+                           String::from("\"exit\"\n\n"));
+        printed_lines += 2;
+
+        for _ in 0..(main_body_height - printed_lines) {
+            screen += &String::from("\n");
         }
+
 
 
         // Draw Footer
-        for _ in 0..CliInterface::UI_FOOTER_SPACE {
+        for _ in 0..(CliInterface::UI_FOOTER_SPACE - 2) {
             screen += &String::from("\n");
         }
-        // for _ in 0..width {
-        //     screen += &String::from("_");
-        // }
-        // screen += &String::from("\n");
-        // printed_lines += 1;
-
 
         print!("{}", screen);
-        // println!("printed Lines {}", printed_lines);
     }
 
 
@@ -216,5 +262,5 @@ impl CliInterface {
         println!()
     }
 
-    fn plot_graph() {}
+
 }
