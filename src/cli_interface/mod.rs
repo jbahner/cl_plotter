@@ -1,7 +1,9 @@
+use std::borrow::{Borrow, BorrowMut};
 use std::fmt::format;
 use std::io::{stdin, stdout, Write};
 use std::iter;
 use std::ops::Rem;
+use std::ptr::null;
 use std::thread::current;
 
 use terminal_size::{Height, terminal_size, Width};
@@ -20,10 +22,11 @@ pub struct CliInterface {
 
 }
 
-thread_local! {static mut current_state: &str = "start";}
+static mut current_state: &str = "start";
 
 impl CliInterface {
     const UI_LEFT_MARGIN: u16 = 8;
+    const UI_RIGHT_MARGIN: u16 = 6;
     // Header Space should be an even number
     const UI_HEADER_SPACE: u16 = 6;
     const UI_FOOTER_SPACE: u16 = 6;
@@ -32,9 +35,9 @@ impl CliInterface {
 
     pub fn cli_interface_loop() {
         let mut p = parser::Parser::new();
-        // TODO change this back to "start"
 
-        Self::draw_screen(current_state);
+        // TODO change this back to "start"
+        Self::draw_screen(&"start".to_string());
 
         loop {
             let mut input = String::new();
@@ -42,6 +45,7 @@ impl CliInterface {
             let _ = stdout().flush();
 
             println!("Type commands below!\n");
+            // TODO please dont say retard
             stdin().read_line(&mut input).expect("Retard!");
 
             if let Some('\n') = input.chars().next_back() {
@@ -54,7 +58,7 @@ impl CliInterface {
             // TODO: Validate input format: only one variable allowed
             // TODO: here comes parsing of typed in command
 
-            p = Self::process_input(input, p);
+            p = Self::process_input(input, p.clone());
 
 
             // Fill data
@@ -74,11 +78,27 @@ impl CliInterface {
         match &input_arguments.get(0).unwrap()[..] {
             "input" => {
                 let given_function = input_arguments[1..].join(" ");
-                parser.parse_expression(given_function);
-                parser.display_expression();
+                // unsafe { func_vec.push(&given_function) }
+                println!("Insertion successful!\n\n");
+                // parser.parse_expression(given_function);
+                // parser.display_expression();
             }
-            "plot" => {
+            "ls" => unsafe {
+                println!("All saved Functions:");
+                // for x in 0..func_vec.len() {
+                //     println!("  {}{}", x, func_vec.get(x).unwrap());
+                // }
+            }
+            "plot" => unsafe {
+                current_state = "plot";
                 Self::draw_screen("plot")
+            }
+            "redraw" => unsafe {
+                Self::draw_screen(current_state)
+            }
+            "help" => unsafe {
+                current_state = "start";
+                Self::draw_screen(current_state)
             }
             "exit" => {
                 println!("Bye, have a beautiful time!");
@@ -144,6 +164,17 @@ impl CliInterface {
                            String::from("\"input <your function>\"\n\n"));
         printed_lines += 2;
 
+        //
+        // screen += &format!("{}{}",
+        //                    left_padding.clone(),
+        //                    String::from("You can redraw the current Ui:\n"));
+        // printed_lines += 1;
+        //
+        // screen += &format!("{}{}",
+        //                    left_padding.clone(),
+        //                    String::from("\"redraw\"\n\n"));
+        // printed_lines += 2;
+
 
         screen += &format!("{}{}",
                            left_padding.clone(),
@@ -152,7 +183,7 @@ impl CliInterface {
 
         screen += &format!("{}{}",
                            left_padding.clone(),
-                           String::from("TODO \"redraw\"\n\n"));
+                           String::from("\"redraw\"\n\n"));
         printed_lines += 2;
 
         screen += &format!("{}{}",
@@ -229,11 +260,12 @@ impl CliInterface {
                 } else if x == height - (Self::UI_FOOTER_SPACE + 2) {
                     screen += &Self::draw_x_axis_legend(width as i32)
                 } else if x == height - (Self::UI_FOOTER_SPACE + 1) {
-                    screen += &Self::draw_x_axis_legend_numbers(width as i32)
+                    screen += "Numbers\n";
+                        // &Self::draw_x_axis_legend_numbers(width as i32)
                 } else if x >= height - Self::UI_FOOTER_SPACE {
                     screen += &Self::draw_footer()
                 } else {
-                    screen += "  |\n";
+                    screen += &(iter::repeat(" ").take(Self::UI_LEFT_MARGIN as usize).collect::<String>() + "|\n");
                 }
             }
             print!("{}", screen);
@@ -250,14 +282,15 @@ impl CliInterface {
     }
 
     fn draw_footer() -> String {
-        return String::from("Footer\n");
+        return String::from("f\n");
     }
 
     fn draw_x_axis(width: i32) -> String {
         // TODO Padding here
-        return format!("{}{}",
-                       "  ",
-                       iter::repeat("_").take((width - 2) as usize).collect::<String>() + "\n");
+        return format!("{}{}{}",
+                       iter::repeat(" ").take(Self::UI_LEFT_MARGIN as usize).collect::<String>(),
+                       "|",
+                       iter::repeat("_").take(((width - 1) - Self::UI_LEFT_MARGIN as i32 - Self::UI_RIGHT_MARGIN as i32) as usize).collect::<String>() + "\n");
 
         // print!("  ");
         //
@@ -269,8 +302,8 @@ impl CliInterface {
 
     fn draw_x_axis_legend(width: i32) -> String {
         return format!("{}{}",
-                       "  ",
-                       iter::repeat("   |").take(((width - 2) / 4) as usize).collect::<String>() + "\n");
+                       iter::repeat(" ").take(Self::UI_LEFT_MARGIN as usize).collect::<String>(),
+                       iter::repeat("    |").take(((width - Self::UI_LEFT_MARGIN as i32 - Self::UI_RIGHT_MARGIN as i32) / 5) as usize).collect::<String>() + "\n");
         // print!("  ");
         //
         // for x in 2..width / 4 {
@@ -282,7 +315,7 @@ impl CliInterface {
     fn draw_x_axis_legend_numbers(width: i32) -> String {
         let mut screen = String::new();
 
-        screen += "  ";
+        screen += &iter::repeat(" ").take(Self::UI_LEFT_MARGIN as usize).collect::<String>();
 
         for x in 2..width / 4 {
             if x < 10 {
