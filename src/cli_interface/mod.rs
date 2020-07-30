@@ -34,6 +34,8 @@ impl CliInterface {
 
     const MINIMUM_WIDTH: u16 = 85;
 
+    const PLOT_GRAPH_CHARACTER: char = '*';
+
 
     pub fn cli_interface_loop() {
         let mut p = parser::Parser::new();
@@ -273,19 +275,45 @@ impl CliInterface {
 
     fn draw_graph_line(width: u16, height: u16, current_row: u16) -> String {
 
+
         let mut screen = String::new();
         let graph_width = width - (Self::UI_LEFT_MARGIN + Self::UI_RIGHT_MARGIN + 1);
         let graph_height = height - (Self::UI_HEADER_SPACE + Self::UI_FOOTER_SPACE + 3);
 
-        let constant_vec = vec![5, graph_width];
+        let function_vec = vec![5; graph_width as usize];
+        let mut to_be_plotted_indices: Vec<u16> = vec!();
+
+
+
 
         if graph_height as i16 - (current_row as i16 - Self::UI_HEADER_SPACE as i16) >= 0 {
             let mut graph_height_per_pixel: f64;
             unsafe { graph_height_per_pixel =  (Y_MIN + Y_MAX) as f64 / graph_height as f64; };
             let current_height_relative_to_graph = graph_height - (current_row - Self::UI_HEADER_SPACE);
-            println!(" Current Value: {}", current_height_relative_to_graph as f64 * graph_height_per_pixel);
-            println!(" Current Position: {}", current_height_relative_to_graph);
+            let current_y_value = current_height_relative_to_graph as f64 * graph_height_per_pixel;
+            // println!("Current Value: {}", current_y_value);
+            println!("Current Position: {}", current_height_relative_to_graph);
+
+
+            let next_y_value = (current_height_relative_to_graph as f64 - 1.) * graph_height_per_pixel;
+
+
+            for i in 0..function_vec.len() {
+                let current_func_value = *function_vec.get(i).unwrap() as f64;
+                // println!("Current Func Val{}", current_func_value);
+
+                if current_func_value > next_y_value && current_func_value <= current_y_value {
+                    to_be_plotted_indices.push(i as u16)
+                }
+            }
+
+            // for i in to_be_plotted_indices.clone() { println!("{}", i)}
+
+            println!("Y-Val: {}, Number of values in row: {}\n", current_y_value, to_be_plotted_indices.len())
+
+
         }
+
 
 
 
@@ -316,7 +344,6 @@ impl CliInterface {
     }
 
     fn draw_x_axis(width: i32) -> String {
-        // TODO Padding here
         return format!("{}{}{}",
                        iter::repeat(" ").take(Self::UI_LEFT_MARGIN as usize).collect::<String>(),
                        "|",
