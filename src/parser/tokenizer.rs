@@ -12,7 +12,6 @@ pub enum Token {
     Subtraction(Box<Token>, Box<Token>),
     Multiplication(Box<Token>, Box<Token>),
     Division(Box<Token>, Box<Token>),
-    // Potency()
     Bracket(Box<Token>),
 }
 
