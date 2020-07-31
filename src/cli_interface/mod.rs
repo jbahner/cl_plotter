@@ -8,12 +8,12 @@ use std::thread::current;
 
 use terminal_size::{Height, terminal_size, Width};
 
+use crate::data::Data;
 use crate::parser::Parser;
+use crate::parser::tokenizer::Token;
 
 use super::data;
 use super::parser;
-use crate::parser::tokenizer::Token;
-use crate::data::Data;
 
 pub struct CliInterface {
     pub calculation_density: i64,
@@ -65,13 +65,6 @@ impl CliInterface {
             // TODO: here comes parsing of typed in command
 
             p = Self::process_input(input, p.clone());
-
-            // Fill data
-            // match p.clone().stack.first() {
-            //     None => continue,
-            //     // Some(stack) => data::Data::new(data).evaluate()
-            // }
-
 
             p.clear();
         }
@@ -250,40 +243,12 @@ impl CliInterface {
     }
 
 
-    // fn draw_ui() {
-    //     Self::draw_frame()
-    // }
-
     fn draw_plot(width: u16, height: u16) {
-        let size = terminal_size();
         let mut screen = String::new();
 
-        if let Some((Width(width), Height(height))) = size {
-            for current_height in 0..height - 3 {
-                if current_height < Self::UI_HEADER_SPACE {
-                    screen += &Self::draw_header(current_height, width)
-                } else if current_height >= height - Self::UI_FOOTER_SPACE {
-                    screen += &Self::draw_footer()
-                } else {
-                    screen += &Self::draw_graph_line(width, height, current_height);
-                }
-            }
-            print!("{}", screen);
-        } else {
-            println!("Unable to get terminal size");
-        }
-    }
-
-
-    fn draw_graph_line(width: u16, height: u16, current_row: u16) -> String {
-
-
-        let mut screen = String::new();
         let graph_width = width - (Self::UI_LEFT_MARGIN + Self::UI_RIGHT_MARGIN + 1);
         let graph_height = height - (Self::UI_HEADER_SPACE + Self::UI_FOOTER_SPACE + 3);
 
-
-        // let function_vec = vec![15; graph_width as usize];
         let function_vec: Vec<f32>;
 
         let mut data: Data;
@@ -291,46 +256,63 @@ impl CliInterface {
             let expr = Token::Multiplication(Box::new(Token::Variable), Box::new(Token::Variable));
             data = data::Data::new(&expr, X_MIN as f32, X_MAX as f32, graph_width as usize);
             data.evaluate();
-            function_vec = data.differentiate();
+            function_vec = data.data.clone();
         }
 
+        let data_matrix = Self::plot_values_into_matrix(vec![vec![" "; graph_width as usize]; graph_height as usize],
+                                                        function_vec,
+                                                        height);
 
 
-
-        let mut to_be_plotted_indices: Vec<u16> = vec!();
-
-
-
-
-        if graph_height as i16 - (current_row as i16 - Self::UI_HEADER_SPACE as i16) >= 0 {
-            let mut graph_height_per_pixel: f64;
-            unsafe { graph_height_per_pixel =  (Y_MIN + Y_MAX) as f64 / graph_height as f64; };
-            let current_height_relative_to_graph = graph_height - (current_row - Self::UI_HEADER_SPACE);
-            let current_y_value = current_height_relative_to_graph as f64 * graph_height_per_pixel;
-            // println!("Current Value: {}", current_y_value);
-            println!("Current Position: {}", current_height_relative_to_graph);
+        for current_height in 0..height - 3 {
+            if current_height < Self::UI_HEADER_SPACE {
+                screen += &Self::draw_header(current_height, width)
+            } else if current_height >= height - Self::UI_FOOTER_SPACE {
+                screen += &Self::draw_footer()
+            } else {
+                screen += &Self::draw_graph_line(width, height, current_height, data_matrix.clone());
+            }
+        }
+        print!("{}", screen);
+    }
 
 
-            let next_y_value = (current_height_relative_to_graph as f64 - 1.) * graph_height_per_pixel;
+    fn plot_values_into_matrix(mut data_matrix: Vec<Vec<&str>>, function_vec: Vec<f32>, height: u16) -> Vec<Vec<&str>> {
+        let graph_height = height - (Self::UI_HEADER_SPACE + Self::UI_FOOTER_SPACE + 3);
 
+        let mut graph_height_per_pixel: f64;
+        unsafe { graph_height_per_pixel = (Y_MIN + Y_MAX) as f64 / graph_height as f64; };
 
-            for i in 0..function_vec.len() {
-                let current_func_value = *function_vec.get(i).unwrap() as f64;
-                // println!("Current Func Val{}", current_func_value);
+        for func_value_index in 0..function_vec.len() {
+            let func_value = function_vec.get(func_value_index).unwrap();
 
-                if current_func_value > next_y_value && current_func_value <= current_y_value {
-                    to_be_plotted_indices.push(i as u16)
+            for i in 0..graph_height {
+                unsafe {
+                    let mut current_y = Y_MIN as f64 + (graph_height_per_pixel * i as f64);
+                    let next_y = Y_MIN as f64 + (graph_height_per_pixel * (i + 1) as f64);
+
+                    if current_y < *func_value as f64 && *func_value as f64 <= next_y {
+                        data_matrix[i as usize][func_value_index] = "*";
+                    }
                 }
             }
+        }
+        data_matrix
+    }
 
-            // for i in to_be_plotted_indices.clone() { println!("{}", i)}
 
-            println!("Y-Val: {}, Number of values in row: {}\n", current_y_value, to_be_plotted_indices.len())
+    fn draw_graph_line(width: u16, height: u16, current_row: u16, data_matrix: Vec<Vec<&str>>) -> String {
+        let mut screen = String::new();
+
+        let graph_height = height - (Self::UI_HEADER_SPACE + Self::UI_FOOTER_SPACE + 3);
 
 
+        if graph_height as i16 - (current_row as i16 - Self::UI_HEADER_SPACE as i16) < 0 {
+            return "".to_string();
         }
 
-
+        let current_height_relative_to_graph = graph_height - (current_row - Self::UI_HEADER_SPACE);
+        // println!("Current Position: {}", current_height_relative_to_graph);
 
 
         if current_row == height - (Self::UI_FOOTER_SPACE + 3) {
@@ -344,15 +326,8 @@ impl CliInterface {
             // Y Axis
             screen += &(iter::repeat(" ").take(Self::UI_LEFT_MARGIN as usize).collect::<String>() + "|");
 
-            if to_be_plotted_indices.len() != 0 {
-                let mut before_width_index = 0;
-
-                for plot_val in to_be_plotted_indices {
-                    screen += &(iter::repeat(" ").take(((plot_val + 1) - before_width_index - 1) as usize).collect::<String>());
-                    screen += &Self::PLOT_GRAPH_CHARACTER.to_string();
-                    before_width_index = plot_val + 1;
-                }
-
+            for plot_string in data_matrix.get((current_height_relative_to_graph - 1) as usize).unwrap() {
+                screen += plot_string;
             }
 
             screen += "\n";
@@ -373,28 +348,16 @@ impl CliInterface {
 
     fn draw_x_axis(width: i32) -> String {
         format!("{}{}{}",
-                       iter::repeat(" ").take(Self::UI_LEFT_MARGIN as usize).collect::<String>(),
-                       "|",
-                       iter::repeat("_").take(((width - 1) - Self::UI_LEFT_MARGIN as i32 - Self::UI_RIGHT_MARGIN as i32) as usize).collect::<String>() + "\n")
+                iter::repeat(" ").take(Self::UI_LEFT_MARGIN as usize).collect::<String>(),
+                "|",
+                iter::repeat("_").take(((width - 1) - Self::UI_LEFT_MARGIN as i32 - Self::UI_RIGHT_MARGIN as i32) as usize).collect::<String>() + "\n")
 
-        // print!("  ");
-        //
-        // for x in 2..width / 2 {
-        //     print!("__");
-        // }
-        // println!()
     }
 
     fn draw_x_axis_legend(width: i32) -> String {
         format!("{}{}",
-                       iter::repeat(" ").take(Self::UI_LEFT_MARGIN as usize).collect::<String>(),
-                       iter::repeat("    |").take(((width - Self::UI_LEFT_MARGIN as i32 - Self::UI_RIGHT_MARGIN as i32) / 5) as usize).collect::<String>() + "\n")
-        // print!("  ");
-        //
-        // for x in 2..width / 4 {
-        //     print!("   |");
-        // }
-        // println!()
+                iter::repeat(" ").take(Self::UI_LEFT_MARGIN as usize).collect::<String>(),
+                iter::repeat("    |").take(((width - Self::UI_LEFT_MARGIN as i32 - Self::UI_RIGHT_MARGIN as i32) / 5) as usize).collect::<String>() + "\n")
     }
 
     fn draw_x_axis_legend_numbers(width: i32) -> String {
