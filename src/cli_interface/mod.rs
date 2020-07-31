@@ -26,6 +26,7 @@ static mut X_MAX: i64 = 5;
 static mut Y_MIN: i64 = 0;
 static mut Y_MAX: i64 = 10;
 static mut saved_functions: Vec<(String, bool)> = Vec::new();
+static mut plotted_functions: Vec<Data> = Vec::new();
 
 impl CliInterface {
     const UI_LEFT_MARGIN: u16 = 8;
@@ -85,7 +86,16 @@ impl CliInterface {
                 println!("All saved Functions:");
                 for x in 0..saved_functions.len() {
                     // TODO show if active here
-                    println!(" {}:  {}", x, saved_functions.get(x).unwrap().0);
+                    let current_saved_func = saved_functions.get(x).unwrap();
+
+                    let mut screen = String::new();
+                    if current_saved_func.1 {
+                        screen += "active"
+                    }
+                    else {
+                        screen += "not active"
+                    }
+                    println!(" {}: {} | {}", x , current_saved_func.0, screen);
                 }
                 print!("\n");
 
@@ -103,6 +113,46 @@ impl CliInterface {
                 saved_functions.remove(remove_index);
 
                 println!("Deleted function at index: {}", remove_index);
+
+                print!("\n");
+
+            }
+            "activate" => unsafe {
+                if input_arguments.len() < 2 {
+                    println!("Too few arguments!");
+                    return parser
+                }
+                if input_arguments[1].parse::<u16>().unwrap() < 0 || input_arguments[1].parse::<u16>().unwrap() >= saved_functions.len() as u16 {
+                    println!("There is no function with given index!\n");
+                    return parser
+                }
+                let activate_index = input_arguments[1].parse::<u16>().unwrap() as usize;
+
+                let mut to_be_activated_function = saved_functions[activate_index as usize].clone();
+                to_be_activated_function.1 = true;
+                saved_functions[activate_index as usize] = to_be_activated_function;
+
+                println!("Activated function at index: {}", activate_index);
+
+                print!("\n");
+
+            }
+            "disable" => unsafe {
+                if input_arguments.len() < 2 {
+                    println!("Too few arguments!");
+                    return parser
+                }
+                if input_arguments[1].parse::<u16>().unwrap() < 0 || input_arguments[1].parse::<u16>().unwrap() >= saved_functions.len() as u16 {
+                    println!("There is no function with given index!\n");
+                    return parser
+                }
+                let activate_index = input_arguments[1].parse::<u16>().unwrap() as usize;
+
+                let mut to_be_disabled_function = saved_functions[activate_index as usize].clone();
+                to_be_disabled_function.1 = false;
+                saved_functions[activate_index as usize] = to_be_disabled_function;
+
+                println!("Disabled function  {}", activate_index);
 
                 print!("\n");
 
@@ -125,8 +175,12 @@ impl CliInterface {
                     println!("X-Min cant be greater than X-Max, try something smaller.");
                     return parser;
                 }
-                println!("X-Min changed to {}.\n", new_xmin);
                 X_MIN = new_xmin;
+                if current_state == "plot" {
+                    Self::draw_screen(current_state);
+                } else {
+                    println!("X-Min changed to {}.\n", new_xmin);
+                }
                 Self::print_current_graph_window()
             }
             "xmax" => unsafe {
@@ -140,8 +194,12 @@ impl CliInterface {
                     println!("X-Max cant be smaller than X-Min, try something bigger.");
                     return parser;
                 }
-                println!("X-Max changed to {}.\n", new_xmax);
                 X_MAX = new_xmax;
+                if current_state == "plot" {
+                    Self::draw_screen(current_state);
+                } else {
+                    println!("X-Max changed to {}.\n", new_xmax);
+                }
                 Self::print_current_graph_window()
             }
             "ymin" => unsafe {
@@ -155,8 +213,12 @@ impl CliInterface {
                     println!("Y-Min cant be greater than Y-Max, try something smaller.");
                     return parser;
                 }
-                println!("Y-Min changed to {}.\n", new_ymin);
                 Y_MIN = new_ymin;
+                if current_state == "plot" {
+                    Self::draw_screen(current_state);
+                } else {
+                    println!("Y-Min changed to {}.\n", new_ymin);
+                }
                 Self::print_current_graph_window()
             }
             "ymax" => unsafe {
@@ -170,8 +232,12 @@ impl CliInterface {
                     println!("Y-Max cant be smaller than Y-Min, try something bigger.");
                     return parser;
                 }
-                println!("Y-Max changed to {}.\n", new_ymax);
                 Y_MAX = new_ymax;
+                if current_state == "plot" {
+                    Self::draw_screen(current_state);
+                } else {
+                    println!("Y-Max changed to {}.\n", new_ymax);
+                }
                 Self::print_current_graph_window()
             }
             "help" => unsafe {
@@ -265,11 +331,21 @@ impl CliInterface {
 
         screen += &format!("{}{}",
                            left_padding.clone(),
+                           String::from("Activate or disable function from being plotted:\n"));
+
+        screen += &format!("{}{}",
+                           left_padding.clone(),
+                           String::from("\"activate <function-index> | disable <function-index>\"\n\n"));
+        printed_lines += 3;
+
+
+        screen += &format!("{}{}",
+                           left_padding.clone(),
                            String::from("You can remove a function from the list:\n"));
 
         screen += &format!("{}{}",
                            left_padding.clone(),
-                           String::from("\"rm <function-list-index>\"\n\n"));
+                           String::from("\"rm <function-index>\"\n\n"));
         printed_lines += 3;
 
 
@@ -474,7 +550,7 @@ impl CliInterface {
     }
 
     fn draw_footer() -> String {
-        String::from("f\n")
+        String::from("\n")
     }
 
     fn draw_x_axis(width: i32) -> String {
