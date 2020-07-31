@@ -167,12 +167,13 @@ impl Parser {
             let t = Self::parse(String::from(&expr[1..idx - 1]));
             (t, idx)
         } else {
+            
             (Variable, i)
         };
     }
 
     /// Counts occurrences of character c in string s
-    fn count_occurrences(c: char, s: &str) -> usize {
+    pub fn count_occurrences(c: char, s: &str) -> usize {
         let mut count = 0;
         for e in s.chars() {
             if e == c {

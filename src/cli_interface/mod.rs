@@ -8,6 +8,8 @@ use std::thread::current;
 
 use terminal_size::{Height, terminal_size, Width};
 
+extern crate regex;
+use regex::Regex;
 use crate::data::Data;
 use crate::parser::Parser;
 use crate::parser::tokenizer::Token;
@@ -28,6 +30,8 @@ static mut Y_MAX: i64 = 10;
 static mut saved_functions: Vec<(String, bool)> = Vec::new();
 static mut plotted_functions: Vec<Data> = Vec::new();
 
+
+
 impl CliInterface {
     const UI_LEFT_MARGIN: u16 = 8;
     const UI_RIGHT_MARGIN: u16 = 6;
@@ -39,6 +43,8 @@ impl CliInterface {
     const MINIMUM_WIDTH: u16 = 85;
 
     const PLOT_GRAPH_CHARACTER: char = '*';
+
+
 
 
     pub fn cli_interface_loop() {
@@ -76,10 +82,15 @@ impl CliInterface {
 
         match &input_arguments.get(0).unwrap()[..] {
             "input" => {
-                let given_function = input_arguments[1..].join(" ");
-                unsafe { saved_functions.push((given_function.clone(), false)) }
-                println!("Insertion successful!\n\n");
-                // parser.parse_expression(given_function);
+                let given_function : String = input_arguments[1..].join(" ");
+                if parser::Parser::count_occurrences('(', given_function.as_str()) != parser::Parser::count_occurrences(')', given_function.as_str())
+                    || !Regex::new(r"([a-zA-Z]|(\d+\.?\d*)|[+\-/*]|\s)+").unwrap().is_match(given_function.as_str()) {
+                    println!("Invalid input, try again!");
+                } else {
+                    unsafe { saved_functions.push((given_function.clone(), false)) }
+                    println!("Insertion successful!\n\n");
+                }
+                    // parser.parse_expression(given_function);
                 // parser.display_expression();
             }
             "ls" => unsafe {
