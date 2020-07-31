@@ -454,12 +454,7 @@ impl CliInterface {
                 if boolean {
                     p.parse_expression(function);
 
-                    // parser_stack = p.stack.first().unwrap();
-
-
-                    // data::Data::new(p.clone().stack.first().unwrap()).evaluate()
-
-                    let mut current_data = data::Data::new(p.clone().stack.first().unwrap(),
+                    let mut current_data = data::Data::new(p.clone().stack.first().cloned().unwrap(),
                                                        X_MIN as f32,
                                                        X_MAX as f32,
                                                        graph_width as usize);
@@ -480,7 +475,7 @@ impl CliInterface {
         let mut data_matrix = vec![vec![" "; graph_width as usize]; graph_height as usize];
 
         unsafe {
-            for plot in plotted_functions {
+            for plot in plotted_functions.iter() {
                 data_matrix = Self::plot_values_into_matrix(data_matrix,
                                                             plot.data.clone(),
                                                             height);

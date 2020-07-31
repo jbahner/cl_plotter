@@ -1,17 +1,17 @@
 use crate::parser::tokenizer::Token;
 use std::ops::{Div, Add, Sub};
 
-pub struct Data<'a> {
-    expr: &'a Token,
+pub struct Data {
+    expr: Token,
     min: f32,
     max: f32,
     n: usize,
     pub data: Vec<f32>,
 }
 
-impl Data<'_> {
+impl Data {
     /// Instantiates a new Data representation
-    pub fn new(expr: &Token, min: f32, max: f32, n: usize) -> Data {
+    pub fn new(expr: Token, min: f32, max: f32, n: usize) -> Data {
         Data {
             expr,
             min,
