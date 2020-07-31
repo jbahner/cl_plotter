@@ -12,6 +12,8 @@ pub enum Token {
     Subtraction(Box<Token>, Box<Token>),
     Multiplication(Box<Token>, Box<Token>),
     Division(Box<Token>, Box<Token>),
+    // Potency()
+    Bracket(Box<Token>),
 }
 
 impl Token {
@@ -32,6 +34,9 @@ impl Token {
             Division(first, second) => {
                 first.evaluate(var) / second.evaluate(var)
             },
+            _ => {
+                panic!("Unexpected token")
+            }
         }
     }
 
@@ -71,6 +76,10 @@ impl Clone for Token {
             Division(first, second) => {
                 Division(first.clone(), second.clone())
             }
+            Bracket(v) => Bracket(v.clone()),
+            _ => {
+                panic!("Unexpected token")
+            }
         }
     }
 }
@@ -96,6 +105,12 @@ impl fmt::Display for Token {
             Division(first, second) => {
                 write!(f, "{}{}, {}{}", "Division(".yellow(), first, second, ")".yellow())
             },
+            Bracket(token) => {
+                write!(f, "({})", token)
+            },
+            _ => {
+                panic!("Unexpected token")
+            }
         }
     }
 }

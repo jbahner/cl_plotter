@@ -1,3 +1,5 @@
+use std::borrow::{Borrow, BorrowMut};
+
 use tokenizer::*;
 use tokenizer::Token::*;
 
@@ -9,7 +11,6 @@ pub struct Parser {
 }
 
 impl Parser {
-
     /// Instantiates parser with empty stack
     pub fn new() -> Parser {
         Parser {
@@ -44,74 +45,104 @@ impl Parser {
         self.stack.pop().unwrap().evaluate(var)
     }
 
-    /// Parses the given expression for later evaluation
-    pub fn parse_expression(&mut self, e: String) {
-        let expr : String = e.chars().filter(|c| !c.is_whitespace()).collect();
+    /// Parses the given String to a Token expression
+    fn parse(e: String) -> Token {
+        let mut stack: Vec<Token> = vec![];
+        let expr: String = e.chars().filter(|c| !c.is_whitespace()).collect();
         let mut i = 0;
         while i < expr.len() {
             // Get rid of whitespaces
             let char = expr.chars().nth(i).unwrap();
             i += 1;
-            let mut next_consumed= 0;
+            let mut next_consumed = 0;
             match char {
                 '+' => {
-                    let token = self.stack.pop().unwrap_or(Digit(0.0));
+                    let token = match stack.pop() {
+                        None => Digit(0.0),
+                        Some(t) => match t {
+                            Bracket(v) => *v,
+                            _ => t,
+                        }
+                    };
+
                     let (next_token, consumed) = Parser::get_next_token(&expr[i..]);
                     next_consumed += consumed;
-                    self.stack.push(Addition(Box::new(token), Box::new(next_token)));
-                },
+                    stack.push(Addition(Box::new(token), Box::new(next_token)));
+                }
                 '-' => {
-                    let token = self.stack.pop().unwrap_or(Digit(0.0));
+                    let token = match stack.pop() {
+                        None => Digit(0.0),
+                        Some(t) => match t {
+                            Bracket(v) => *v,
+                            _ => t,
+                        }
+                    };
                     let (next_token, consumed) = Parser::get_next_token(&expr[i..]);
                     next_consumed += consumed;
-                    self.stack.push(Subtraction(Box::new(token), Box::new(next_token)));
-                },
+                    stack.push(Subtraction(Box::new(token), Box::new(next_token)));
+                }
                 '*' => {
-                    let token = self.stack.pop().unwrap();
+                    let token = stack.pop().unwrap();
                     let (next_token, consumed) = Parser::get_next_token(&expr[i..]);
                     next_consumed += consumed;
                     match token {
                         Digit(_) | Multiplication(_, _) | Division(_, _) => {
-                            self.stack.push(Multiplication(Box::new(token), Box::new(next_token)));
-                        },
+                            stack.push(Multiplication(Box::new(token), Box::new(next_token)));
+                        }
+                        Bracket(t) => {
+                            stack.push(Multiplication(t, Box::new(next_token)));
+                        }
                         Addition(first_val, second_val) => {
-                            self.stack.push(Addition(first_val, Box::new(Multiplication(second_val, Box::new(next_token)))));
-                        },
+                            stack.push(Addition(first_val, Box::new(Multiplication(second_val, Box::new(next_token)))));
+                        }
                         Subtraction(first_val, second_val) => {
-                            self.stack.push(Subtraction(first_val, Box::new(Multiplication(second_val, Box::new(next_token)))));
-                        },
+                            stack.push(Subtraction(first_val, Box::new(Multiplication(second_val, Box::new(next_token)))));
+                        }
                         _ => {}
                     }
-                },
+                }
                 '/' => {
-                    let token = self.stack.pop().unwrap();
+                    let token = stack.pop().unwrap();
                     let (next_token, consumed) = Parser::get_next_token(&expr[i..]);
                     next_consumed += consumed;
                     match token {
                         Digit(_) | Multiplication(_, _) | Division(_, _) => {
-                            self.stack.push(Division(Box::new(token), Box::new(next_token)));
-                        },
+                            stack.push(Division(Box::new(token), Box::new(next_token)));
+                        }
+                        Bracket(t) => {
+                            stack.push(Division(t, Box::new(next_token)));
+                        }
                         Addition(first_val, second_val) => {
-                            self.stack.push(Addition(first_val, Box::new(Division(second_val, Box::new(next_token)))));
+                            stack.push(Addition(first_val, Box::new(Division(second_val, Box::new(next_token)))));
                         }
                         Subtraction(first_val, second_val) => {
-                            self.stack.push(Subtraction(first_val, Box::new(Division(second_val, Box::new(next_token)))));
+                            stack.push(Subtraction(first_val, Box::new(Division(second_val, Box::new(next_token)))));
                         }
                         _ => {}
                     }
-                },
+                }
                 _ => {
-                    let (next_token, consumed) = Parser::get_next_token(&expr[i-1..]);
+                    let (next_token, consumed) = Parser::get_next_token(&expr[i - 1..]);
                     next_consumed += consumed - 1;
-                    self.stack.push(next_token);
+                    stack.push(next_token);
                 }
             }
             i += next_consumed;
         }
+        return match stack.pop() {
+            Some(Bracket(v)) => *v,
+            Some(t) => t,
+            None => panic!("Could not parse")
+        };
+    }
+
+    /// Parses the given expression for later evaluation
+    pub fn parse_expression(&mut self, e: String) {
+        self.stack.push(Self::parse(e));
     }
 
     /// Retrieves the first token and the index of it in the expr String
-    fn get_next_token(expr : &str) -> (Token, usize) {
+    fn get_next_token(expr: &str) -> (Token, usize) {
         let mut i = 1;
         let char = expr.chars().nth(0).unwrap();
         return if char.is_digit(10) {
@@ -126,9 +157,29 @@ impl Parser {
                 }
             }
             (Digit(float.parse().unwrap()), i)
+        } else if char == '(' {
+            let mut idx = expr.find(')').unwrap() + 1;
+
+            while Self::count_occurrences('(', &expr[0..idx]) != Self::count_occurrences(')', &expr[0..idx]) {
+                idx += expr[idx..].find(')').unwrap() + 1;
+            }
+
+            let t = Self::parse(String::from(&expr[1..idx - 1]));
+            (Bracket(Box::new(t)), idx)
         } else {
             (Variable, i)
+        };
+    }
+
+    /// Counts occurrences of character c in string s
+    fn count_occurrences(c: char, s: &str) -> usize {
+        let mut count = 0;
+        for e in s.chars() {
+            if e == c {
+                count += 1;
+            }
         }
+        count
     }
 }
 
@@ -143,7 +194,7 @@ impl Clone for Parser {
 #[cfg(test)]
 mod test {
     use super::*;
-    // use super::tokenizer::Token::*;
+
     #[test]
     fn next_token_digit() {
         let expr = "1+2";
