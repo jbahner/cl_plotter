@@ -25,6 +25,7 @@ static mut X_MIN: i64 = 0;
 static mut X_MAX: i64 = 5;
 static mut Y_MIN: i64 = 0;
 static mut Y_MAX: i64 = 10;
+static mut saved_functions: Vec<String> = Vec::new();
 
 impl CliInterface {
     const UI_LEFT_MARGIN: u16 = 8;
@@ -76,17 +77,35 @@ impl CliInterface {
         match &input_arguments.get(0).unwrap()[..] {
             "input" => {
                 let given_function = input_arguments[1..].join(" ");
-                // unsafe { func_vec.push(&given_function) }
+                unsafe { saved_functions.push(given_function.clone()) }
                 println!("Insertion successful!\n\n");
                 // parser.parse_expression(given_function);
                 // parser.display_expression();
             }
             "ls" => unsafe {
-                // TODO implement ls
                 println!("All saved Functions:");
-                // for x in 0..func_vec.len() {
-                //     println!("  {}{}", x, func_vec.get(x).unwrap());
-                // }
+                for x in 0..saved_functions.len() {
+                    println!(" {}:  {}", x, saved_functions.get(x).unwrap());
+                }
+                print!("\n");
+
+            }
+            "rm" => unsafe {
+                if input_arguments.len() < 2 {
+                    println!("Too few arguments!");
+                    return parser
+                }
+                if input_arguments[1].parse::<u16>().unwrap() < 0 || input_arguments[1].parse::<u16>().unwrap() >= saved_functions.len() as u16 {
+                    println!("Deletion index is wrong!");
+                    return parser
+                }
+                let remove_index = input_arguments[1].parse::<u16>().unwrap() as usize;
+                saved_functions.remove(remove_index);
+
+                println!("Deleted function at index: {}", remove_index);
+
+                print!("\n");
+
             }
             "plot" => unsafe {
                 current_state = "plot";
@@ -157,55 +176,71 @@ impl CliInterface {
         screen += &format!("{}{}",
                            left_padding.clone(),
                            String::from("You can input your linear functions here:\n"));
-        printed_lines += 1;
 
         screen += &format!("{}{}",
                            left_padding.clone(),
                            String::from("\"input <your function>\"\n\n"));
-        printed_lines += 2;
+        printed_lines += 3;
 
-        //
-        // screen += &format!("{}{}",
-        //                    left_padding.clone(),
-        //                    String::from("You can redraw the current Ui:\n"));
-        // printed_lines += 1;
-        //
-        // screen += &format!("{}{}",
-        //                    left_padding.clone(),
-        //                    String::from("\"redraw\"\n\n"));
-        // printed_lines += 2;
+
+        screen += &format!("{}{}",
+                           left_padding.clone(),
+                           String::from("You can list your linear functions:\n"));
+
+        screen += &format!("{}{}",
+                           left_padding.clone(),
+                           String::from("\"ls\"\n\n"));
+        printed_lines += 3;
+
+
+        screen += &format!("{}{}",
+                           left_padding.clone(),
+                           String::from("You can remove a function from the list:\n"));
+
+        screen += &format!("{}{}",
+                           left_padding.clone(),
+                           String::from("\"rm <function-list-index>\"\n\n"));
+        printed_lines += 3;
 
 
         screen += &format!("{}{}",
                            left_padding.clone(),
                            String::from("You can redraw the current Ui:\n"));
-        printed_lines += 1;
 
         screen += &format!("{}{}",
                            left_padding.clone(),
                            String::from("\"redraw\"\n\n"));
-        printed_lines += 2;
+        printed_lines += 3;
+
+
+        screen += &format!("{}{}",
+                           left_padding.clone(),
+                           String::from("You can redraw the current Ui:\n"));
+
+        screen += &format!("{}{}",
+                           left_padding.clone(),
+                           String::from("\"redraw\"\n\n"));
+        printed_lines += 3;
+
 
         screen += &format!("{}{}",
                            left_padding.clone(),
                            String::from("You can plot the current function:\n"));
-        printed_lines += 1;
 
         screen += &format!("{}{}",
                            left_padding.clone(),
                            String::from("\"plot\"\n\n"));
-        printed_lines += 2;
+        printed_lines += 3;
 
 
         screen += &format!("{}{}",
                            left_padding.clone(),
                            String::from("Or exit by typing:\n"));
-        printed_lines += 1;
 
         screen += &format!("{}{}",
                            left_padding.clone(),
                            String::from("\"exit\"\n\n"));
-        printed_lines += 2;
+        printed_lines += 3;
 
         for _ in 0..(main_body_height - printed_lines) {
             screen += &String::from("\n");
@@ -250,6 +285,7 @@ impl CliInterface {
         let graph_height = height - (Self::UI_HEADER_SPACE + Self::UI_FOOTER_SPACE + 3);
 
         let function_vec: Vec<f32>;
+        // let function_vec2: Vec<f32>;
 
         let mut data: Data;
         unsafe {
@@ -257,11 +293,16 @@ impl CliInterface {
             data = data::Data::new(&expr, X_MIN as f32, X_MAX as f32, graph_width as usize);
             data.evaluate();
             function_vec = data.data.clone();
+            // function_vec2 = data.differentiate();
         }
 
-        let data_matrix = Self::plot_values_into_matrix(vec![vec![" "; graph_width as usize]; graph_height as usize],
+        let mut data_matrix = Self::plot_values_into_matrix(vec![vec![" "; graph_width as usize]; graph_height as usize],
                                                         function_vec,
                                                         height);
+
+        // data_matrix = Self::plot_values_into_matrix(data_matrix,
+        //                                                     function_vec2,
+        //                                                     height);
 
 
         for current_height in 0..height - 3 {
