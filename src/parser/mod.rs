@@ -86,7 +86,7 @@ impl Parser {
                     let (next_token, consumed) = Parser::get_next_token(&expr[i..]);
                     next_consumed += consumed;
                     match token {
-                        Digit(_) | Multiplication(_, _) | Division(_, _) => {
+                        Digit(_) | Multiplication(_, _) | Division(_, _) | Variable => {
                             stack.push(Multiplication(Box::new(token), Box::new(next_token)));
                         }
                         Bracket(t) => {
@@ -106,7 +106,7 @@ impl Parser {
                     let (next_token, consumed) = Parser::get_next_token(&expr[i..]);
                     next_consumed += consumed;
                     match token {
-                        Digit(_) | Multiplication(_, _) | Division(_, _) => {
+                        Digit(_) | Multiplication(_, _) | Division(_, _) | Variable => {
                             stack.push(Division(Box::new(token), Box::new(next_token)));
                         }
                         Bracket(t) => {
