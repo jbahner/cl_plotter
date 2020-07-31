@@ -527,6 +527,49 @@ impl CliInterface {
 
         screen += &format!("{}{}",
                            left_padding.clone(),
+                           String::from("Get Function value of specific X-Value:\n"));
+
+        screen += &format!("{}{}",
+                           left_padding.clone(),
+                           String::from("\"fx <function-index> <X-Value>\"\n\n"));
+        printed_lines += 3;
+
+
+        screen += &format!("{}{}",
+                           left_padding.clone(),
+                           String::from("Get minimum or maximum in given interval:\n"));
+
+        screen += &format!("{}{}",
+                           left_padding.clone(),
+                           String::from(format!("{}{}{}",
+                                                "\"min <function-index> <left-border> <right-border>\"\n",
+                                                left_padding.clone(),
+                                                "\"max <function-index> <left-border> <right-border>\" \n\n")));
+        printed_lines += 4;
+
+
+        screen += &format!("{}{}",
+                           left_padding.clone(),
+                           String::from("Integrate function in given interval:\n"));
+
+        screen += &format!("{}{}",
+                           left_padding.clone(),
+                           String::from("\"integral <function-index> <left-border> <right-border>\"\n\n"));
+        printed_lines += 3;
+
+
+        screen += &format!("{}{}",
+                           left_padding.clone(),
+                           String::from("Differentiate a function and plot it:\n"));
+
+        screen += &format!("{}{}",
+                           left_padding.clone(),
+                           String::from("\"diff <function-index>\"\n\n"));
+        printed_lines += 3;
+
+
+        screen += &format!("{}{}",
+                           left_padding.clone(),
                            String::from("Show the current graph window by typing:\n"));
 
         screen += &format!("{}{}",
@@ -557,11 +600,11 @@ impl CliInterface {
 
         screen += &format!("{}{}",
                            left_padding.clone(),
-                           String::from("You can redraw the current Ui:\n"));
+                           String::from("You can always come back to this page by typing:\n"));
 
         screen += &format!("{}{}",
                            left_padding.clone(),
-                           String::from("\"redraw\"\n\n"));
+                           String::from("\"help\"\n\n"));
         printed_lines += 3;
 
 
@@ -729,6 +772,7 @@ impl CliInterface {
         screen
     }
 
+
     fn draw_header(current_height: u16, width: u16) -> String {
         if current_height == 2 {
             return format!("{}", Self::generate_centered_text_string(width, "Your Plot"));
@@ -736,9 +780,11 @@ impl CliInterface {
         format!("{}", "\n")
     }
 
+
     fn draw_footer() -> String {
         String::from("\n")
     }
+
 
     fn draw_x_axis(width: i32) -> String {
         format!("{}{}{}",
@@ -747,12 +793,14 @@ impl CliInterface {
                 iter::repeat("_").take(((width - 1) - Self::UI_LEFT_MARGIN as i32 - Self::UI_RIGHT_MARGIN as i32) as usize).collect::<String>() + "\n")
     }
 
+    // Sadly didnt have the time to implement correctly
     fn draw_x_axis_legend(width: i32) -> String {
         format!("{}{}",
                 iter::repeat(" ").take(Self::UI_LEFT_MARGIN as usize).collect::<String>(),
                 iter::repeat("    |").take(((width - Self::UI_LEFT_MARGIN as i32 - Self::UI_RIGHT_MARGIN as i32) / 5) as usize).collect::<String>() + "\n")
     }
 
+    // Sadly didnt have the time to implement correctly
     fn draw_x_axis_legend_numbers(width: i32) -> String {
         let mut screen = String::new();
 
