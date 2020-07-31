@@ -95,7 +95,7 @@ mod test {
     #[test]
     fn evaluate_data_length() {
         let expr = Token::Addition(Box::new(Token::Variable), Box::new(Digit(3.0)));
-        let mut data = Data::new(&expr, -10.0, 10.0, 21);
+        let mut data = Data::new(expr, -10.0, 10.0, 21);
 
         data.evaluate();
 
