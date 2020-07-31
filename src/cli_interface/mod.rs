@@ -41,12 +41,13 @@ impl CliInterface {
     const UI_FOOTER_SPACE: u16 = 6;
 
     const MINIMUM_WIDTH: u16 = 85;
+    const MINIMUM_HEIGHT: u16 = 60;
 
     const PLOT_GRAPH_CHARACTER: char = '*';
 
 
 
-
+    /// Main loop of the cl_plotter, reads input and gives it to "process_input"
     pub fn cli_interface_loop() {
         let mut p = parser::Parser::new();
 
@@ -58,8 +59,7 @@ impl CliInterface {
             let _ = stdout().flush();
 
             println!("Type commands below!\n");
-            // TODO please dont say retard
-            stdin().read_line(&mut input).expect("Retard!");
+            stdin().read_line(&mut input).expect("Reading input failed!");
 
             if let Some('\n') = input.chars().next_back() {
                 input.pop();
@@ -77,6 +77,7 @@ impl CliInterface {
         }
     }
 
+    /// Processes given input by user
     fn process_input(input: String, mut parser: Parser) -> Parser {
         let input_arguments: Vec<&str> = input.split(" ").collect();
 
@@ -96,7 +97,6 @@ impl CliInterface {
             "ls" => unsafe {
                 println!("All saved Functions:");
                 for x in 0..saved_functions.len() {
-                    // TODO show if active here
                     let current_saved_func = saved_functions.get(x).unwrap();
 
                     let mut screen = String::new();
@@ -246,7 +246,6 @@ impl CliInterface {
                 }
                 Self::print_current_graph_window()
             }
-            //TODO add fx to help board
             "fx" => unsafe {
                 if input_arguments.len() < 3 {
                     println!("Too few arguments!");
@@ -279,7 +278,6 @@ impl CliInterface {
 
                 println!("Function value f({}) = {}\n", x_value_to_calc_f_x, data.evaluate_single(x_value_to_calc_f_x));
             }
-            //TODO add min to help board
             "min" => unsafe {
                 if input_arguments.len() < 4 {
                     println!("Too few arguments!");
@@ -312,7 +310,6 @@ impl CliInterface {
 
                 println!("Minimum in Interval [{},{}] is {}\n", min_x_border, max_x_border, data.min(min_x_border, max_x_border));
             }
-            // TODO save max on help page
             "max" => unsafe {
                 if input_arguments.len() < 4 {
                     println!("Too few arguments!");
@@ -345,7 +342,6 @@ impl CliInterface {
 
                 println!("Maximum in Interval [{},{}] is {}\n", min_x_border, max_x_border, data.max(min_x_border, max_x_border));
             }
-            // TODO save max on help page
             "integral" => unsafe {
                 if input_arguments.len() < 4 {
                     println!("Too few arguments!");
@@ -378,7 +374,6 @@ impl CliInterface {
 
                 println!("Intergral in [{},{}] is about {}\n", min_x_border, max_x_border, data.integrate(min_x_border, max_x_border));
             }
-            // TODO add diff on help page
             "diff" => unsafe {
                 if input_arguments.len() < 2 {
                     println!("Too few arguments!");
@@ -434,6 +429,7 @@ impl CliInterface {
     }
 
 
+    /// Prints the current display area borders of the plot graph
     fn print_current_graph_window() {
         unsafe {
             println!("X-Min: {}  X-Max: {}  \nY-Min: {}  Y-Max: {}\n",
@@ -442,12 +438,14 @@ impl CliInterface {
     }
 
 
+    /// Method to draw either menu or plot screen
     fn draw_screen(s: &str) {
         let size = terminal_size();
         if let Some((Width(w), Height(h))) = size {
-            if w < Self::MINIMUM_WIDTH {
+            if w < Self::MINIMUM_WIDTH || h < Self::MINIMUM_HEIGHT{
+                println!("Please make the terminal window bigger, it is too small at the moment");
                 //TODO check height too
-                panic!("Terminal window too small please make it wider!")
+                std::process::exit(0);
             }
 
             match &s[..] {
@@ -460,6 +458,7 @@ impl CliInterface {
     }
 
 
+    /// Print the Starting Menu Screen
     fn draw_start_screen(width: u16, height: u16) {
         let mut screen = String::new();
         let mut printed_lines = 0;
@@ -663,6 +662,7 @@ impl CliInterface {
     }
 
 
+    /// Super Method for drawing plot window with all activated functions
     fn draw_plot(width: u16, height: u16) {
         let mut screen = String::new();
 
@@ -714,6 +714,7 @@ impl CliInterface {
     }
 
 
+    /// Parses given data vectors into data matrix in which the graphs are defined
     fn plot_values_into_matrix(mut data_matrix: Vec<Vec<&str>>, function_vec: Vec<f32>, height: u16) -> Vec<Vec<&str>> {
         let graph_height = height - (Self::UI_HEADER_SPACE + Self::UI_FOOTER_SPACE + 3);
 
@@ -737,7 +738,7 @@ impl CliInterface {
         data_matrix
     }
 
-
+    /// Creates Strings row for given row which are printed together as the full graph
     fn draw_graph_line(width: u16, height: u16, current_row: u16, data_matrix: Vec<Vec<&str>>) -> String {
         let mut screen = String::new();
 
@@ -749,7 +750,6 @@ impl CliInterface {
         }
 
         let current_height_relative_to_graph = graph_height - (current_row - Self::UI_HEADER_SPACE);
-        // println!("Current Position: {}", current_height_relative_to_graph);
 
 
         if current_row == height - (Self::UI_FOOTER_SPACE + 3) {
