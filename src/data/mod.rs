@@ -6,7 +6,7 @@ pub struct Data<'a> {
     min: f32,
     max: f32,
     n: usize,
-    data: Vec<f32>,
+    pub data: Vec<f32>,
 }
 
 impl Data<'_> {

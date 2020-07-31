@@ -12,6 +12,8 @@ use crate::parser::Parser;
 
 use super::data;
 use super::parser;
+use crate::parser::tokenizer::Token;
+use crate::data::Data;
 
 pub struct CliInterface {
     pub calculation_density: i64,
@@ -20,9 +22,9 @@ pub struct CliInterface {
 
 static mut current_state: &str = "start";
 static mut X_MIN: i64 = 0;
-static mut X_MAX: i64 = 10;
+static mut X_MAX: i64 = 5;
 static mut Y_MIN: i64 = 0;
-static mut Y_MAX: i64 = 20;
+static mut Y_MAX: i64 = 10;
 
 impl CliInterface {
     const UI_LEFT_MARGIN: u16 = 8;
@@ -64,7 +66,6 @@ impl CliInterface {
 
             p = Self::process_input(input, p.clone());
 
-            let mut calculated_points: Vec<f64> = vec!();
             // Fill data
             // match p.clone().stack.first() {
             //     None => continue,
@@ -112,7 +113,7 @@ impl CliInterface {
             _ => println!("Unknown command, type \"help\" for a List of available commands!")
         }
 
-        return parser;
+        parser
     }
 
 
@@ -120,6 +121,7 @@ impl CliInterface {
         let size = terminal_size();
         if let Some((Width(w), Height(h))) = size {
             if w < Self::MINIMUM_WIDTH {
+                //TODO check height too
                 panic!("Terminal window too small please make it wider!")
             }
 
@@ -280,7 +282,18 @@ impl CliInterface {
         let graph_width = width - (Self::UI_LEFT_MARGIN + Self::UI_RIGHT_MARGIN + 1);
         let graph_height = height - (Self::UI_HEADER_SPACE + Self::UI_FOOTER_SPACE + 3);
 
-        let function_vec = vec![15; graph_width as usize];
+
+        // let function_vec = vec![15; graph_width as usize];
+        let function_vec: Vec<f32>;
+
+        let mut data: Data;
+        unsafe {
+            let expr = Token::Multiplication(Box::new(Token::Variable), Box::new(Token::Variable));
+            data = data::Data::new(&expr, X_MIN as f32, X_MAX as f32, graph_width as usize);
+            data.evaluate();
+            function_vec = data.differentiate();
+        }
+
 
 
 
@@ -344,25 +357,25 @@ impl CliInterface {
 
             screen += "\n";
         }
-        return screen;
+        screen
     }
 
     fn draw_header(current_height: u16, width: u16) -> String {
         if current_height == 2 {
             return format!("{}", Self::generate_centered_text_string(width, "Your Plot"));
         }
-        return format!("{}", "\n");
+        format!("{}", "\n")
     }
 
     fn draw_footer() -> String {
-        return String::from("f\n");
+        String::from("f\n")
     }
 
     fn draw_x_axis(width: i32) -> String {
-        return format!("{}{}{}",
+        format!("{}{}{}",
                        iter::repeat(" ").take(Self::UI_LEFT_MARGIN as usize).collect::<String>(),
                        "|",
-                       iter::repeat("_").take(((width - 1) - Self::UI_LEFT_MARGIN as i32 - Self::UI_RIGHT_MARGIN as i32) as usize).collect::<String>() + "\n");
+                       iter::repeat("_").take(((width - 1) - Self::UI_LEFT_MARGIN as i32 - Self::UI_RIGHT_MARGIN as i32) as usize).collect::<String>() + "\n")
 
         // print!("  ");
         //
@@ -373,9 +386,9 @@ impl CliInterface {
     }
 
     fn draw_x_axis_legend(width: i32) -> String {
-        return format!("{}{}",
+        format!("{}{}",
                        iter::repeat(" ").take(Self::UI_LEFT_MARGIN as usize).collect::<String>(),
-                       iter::repeat("    |").take(((width - Self::UI_LEFT_MARGIN as i32 - Self::UI_RIGHT_MARGIN as i32) / 5) as usize).collect::<String>() + "\n");
+                       iter::repeat("    |").take(((width - Self::UI_LEFT_MARGIN as i32 - Self::UI_RIGHT_MARGIN as i32) / 5) as usize).collect::<String>() + "\n")
         // print!("  ");
         //
         // for x in 2..width / 4 {
@@ -401,6 +414,6 @@ impl CliInterface {
             }
         }
         screen += "\n";
-        return screen;
+        screen
     }
 }
