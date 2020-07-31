@@ -246,6 +246,41 @@ impl CliInterface {
                 }
                 Self::print_current_graph_window()
             }
+            //TODO add fx to help board
+            "fx" => unsafe {
+                if input_arguments.len() < 3 {
+                    println!("Too few arguments!");
+                    return parser;
+                } else if input_arguments.len() > 3 {
+                    println!("Too much arguments!");
+                    return parser;
+                }
+
+                let function_index = input_arguments[1].parse::<u16>().unwrap();
+                if function_index < 0 || function_index >= saved_functions.clone().len() as u16 {
+                    println!("Given Function does not exist!");
+                }
+
+                let x_value_to_calc_f_x = input_arguments[2].parse::<f32>().unwrap();
+
+                let current_function = saved_functions.clone()[function_index as usize].clone().0;
+
+                let mut p = Parser::new();
+
+                p.parse_expression(current_function);
+                let tmp = p.clone().stack.len();
+                println!("Size of parser stack: {}", tmp);
+
+
+
+                let data = data::Data::new(p.clone().stack.first().cloned().unwrap(),
+                                           X_MIN as f32,
+                                           X_MAX as f32,
+                                           10);
+
+                println!("Function value f({}) = {}", x_value_to_calc_f_x, data.evaluate_single(x_value_to_calc_f_x));
+
+            }
             "help" => unsafe {
                 current_state = "start";
                 Self::draw_screen(current_state)
@@ -463,25 +498,18 @@ impl CliInterface {
 
             for (function, boolean) in saved_functions.clone() {
                 if boolean {
-                    p.parse_expression(function);
+                    p.parse_expression(function.clone());
 
                     let mut current_data = data::Data::new(p.clone().stack.first().cloned().unwrap(),
-                                                       X_MIN as f32,
-                                                       X_MAX as f32,
-                                                       graph_width as usize);
+                                                           X_MIN as f32,
+                                                           X_MAX as f32,
+                                                           graph_width as usize);
                     current_data.evaluate();
                     plotted_functions.push(current_data);
+                    p.clear();
                 }
             }
         }
-
-        // unsafe {
-        //     let expr = Token::Multiplication(Box::new(Token::Variable), Box::new(Token::Variable));
-        //     data = data::Data::new(&expr, X_MIN as f32, X_MAX as f32, graph_width as usize);
-        //     data.evaluate();
-        //     function_vec = data.data.clone();
-        //     // function_vec2 = data.differentiate();
-        // }
 
         let mut data_matrix = vec![vec![" "; graph_width as usize]; graph_height as usize];
 
@@ -493,7 +521,6 @@ impl CliInterface {
             }
         }
 
-
         for current_height in 0..height - 3 {
             if current_height < Self::UI_HEADER_SPACE {
                 screen += &Self::draw_header(current_height, width)
@@ -504,6 +531,8 @@ impl CliInterface {
             }
         }
         print!("{}", screen);
+
+        unsafe { plotted_functions.clear() }
     }
 
 

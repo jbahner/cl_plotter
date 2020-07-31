@@ -2,7 +2,7 @@ use crate::parser::tokenizer::Token;
 use std::ops::{Div, Add, Sub};
 
 pub struct Data {
-    expr: Token,
+    pub expr: Token,
     min: f32,
     max: f32,
     n: usize,
@@ -104,7 +104,7 @@ mod test {
     #[test]
     fn evaluate_single() {
         let expr = Token::Addition(Box::new(Token::Variable), Box::new(Digit(3.0)));
-        let mut data = Data::new(&expr, -10.0, 10.0, 21);
+        let mut data = Data::new(expr, -10.0, 10.0, 21);
 
         assert_eq!(47.0, data.evaluate_single(44.0).round());
     }
@@ -112,7 +112,7 @@ mod test {
     #[test]
     fn interval_size() {
         let expr = Token::Addition(Box::new(Token::Variable), Box::new(Digit(3.0)));
-        let mut data = Data::new(&expr, -10.0, 10.0, 21);
+        let mut data = Data::new(expr, -10.0, 10.0, 21);
 
         assert_eq!(1.0, data.interval_size());
     }
@@ -120,7 +120,7 @@ mod test {
     #[test]
     fn calculate_index() {
         let expr = Token::Addition(Box::new(Token::Variable), Box::new(Digit(3.0)));
-        let mut data = Data::new(&expr, -10.0, 10.0, 21);
+        let mut data = Data::new(expr, -10.0, 10.0, 21);
 
         data.evaluate();
 
@@ -130,7 +130,7 @@ mod test {
     #[test]
     fn calculate_index_lower_bound() {
         let expr = Token::Addition(Box::new(Token::Variable), Box::new(Digit(3.0)));
-        let mut data = Data::new(&expr, -10.0, 10.0, 21);
+        let mut data = Data::new(expr, -10.0, 10.0, 21);
 
         data.evaluate();
 
@@ -140,7 +140,7 @@ mod test {
     #[test]
     fn calculate_index_upper_bound() {
         let expr = Token::Addition(Box::new(Token::Variable), Box::new(Digit(3.0)));
-        let mut data = Data::new(&expr, -10.0, 10.0, 21);
+        let mut data = Data::new(expr, -10.0, 10.0, 21);
 
         data.evaluate();
 
@@ -150,7 +150,7 @@ mod test {
     #[test]
     fn calculate_index_out_of_bound() {
         let expr = Token::Addition(Box::new(Token::Variable), Box::new(Digit(3.0)));
-        let mut data = Data::new(&expr, -10.0, 10.0, 21);
+        let mut data = Data::new(expr, -10.0, 10.0, 21);
 
         data.evaluate();
 
@@ -160,7 +160,7 @@ mod test {
     #[test]
     fn calculate_min() {
         let expr = Token::Addition(Box::new(Token::Variable), Box::new(Digit(3.0)));
-        let mut data = Data::new(&expr, -10.0, 10.0, 21);
+        let mut data = Data::new(expr, -10.0, 10.0, 21);
 
         data.evaluate();
 
@@ -170,7 +170,7 @@ mod test {
     #[test]
     fn calculate_max() {
         let expr = Token::Addition(Box::new(Token::Variable), Box::new(Digit(3.0)));
-        let mut data = Data::new(&expr, -10.0, 10.0, 21);
+        let mut data = Data::new(expr, -10.0, 10.0, 21);
 
         data.evaluate();
 
@@ -180,7 +180,7 @@ mod test {
     #[test]
     fn calculate_max_exclusive() {
         let expr = Token::Addition(Box::new(Token::Variable), Box::new(Digit(3.0)));
-        let mut data = Data::new(&expr, -10.0, 10.0, 21);
+        let mut data = Data::new(expr, -10.0, 10.0, 21);
 
         data.evaluate();
 
