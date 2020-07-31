@@ -165,7 +165,7 @@ impl Parser {
             }
 
             let t = Self::parse(String::from(&expr[1..idx - 1]));
-            (Bracket(Box::new(t)), idx)
+            (t, idx)
         } else {
             (Variable, i)
         };
