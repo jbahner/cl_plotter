@@ -98,7 +98,6 @@ impl Parser {
                         Subtraction(first_val, second_val) => {
                             stack.push(Subtraction(first_val, Box::new(Multiplication(second_val, Box::new(next_token)))));
                         }
-                        _ => {}
                     }
                 }
                 '/' => {
@@ -118,7 +117,6 @@ impl Parser {
                         Subtraction(first_val, second_val) => {
                             stack.push(Subtraction(first_val, Box::new(Division(second_val, Box::new(next_token)))));
                         }
-                        _ => {}
                     }
                 }
                 _ => {
