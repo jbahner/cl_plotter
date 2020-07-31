@@ -25,7 +25,7 @@ static mut X_MIN: i64 = 0;
 static mut X_MAX: i64 = 5;
 static mut Y_MIN: i64 = 0;
 static mut Y_MAX: i64 = 10;
-static mut saved_functions: Vec<String> = Vec::new();
+static mut saved_functions: Vec<(String, bool)> = Vec::new();
 
 impl CliInterface {
     const UI_LEFT_MARGIN: u16 = 8;
@@ -43,7 +43,6 @@ impl CliInterface {
     pub fn cli_interface_loop() {
         let mut p = parser::Parser::new();
 
-        // TODO change this back to "start"
         Self::draw_screen(&"start".to_string());
 
         loop {
@@ -77,7 +76,7 @@ impl CliInterface {
         match &input_arguments.get(0).unwrap()[..] {
             "input" => {
                 let given_function = input_arguments[1..].join(" ");
-                unsafe { saved_functions.push(given_function.clone()) }
+                unsafe { saved_functions.push((given_function.clone(), false)) }
                 println!("Insertion successful!\n\n");
                 // parser.parse_expression(given_function);
                 // parser.display_expression();
@@ -85,7 +84,8 @@ impl CliInterface {
             "ls" => unsafe {
                 println!("All saved Functions:");
                 for x in 0..saved_functions.len() {
-                    println!(" {}:  {}", x, saved_functions.get(x).unwrap());
+                    // TODO show if active here
+                    println!(" {}:  {}", x, saved_functions.get(x).unwrap().0);
                 }
                 print!("\n");
 
@@ -114,9 +114,72 @@ impl CliInterface {
             "redraw" => unsafe {
                 Self::draw_screen(current_state)
             }
+            "xmin" => unsafe {
+                if input_arguments.len() < 2 {
+                    println!("Too few arguments!");
+                    return parser;
+                }
+                let new_xmin = input_arguments[1].parse::<i64>().unwrap();
+
+                if new_xmin >= X_MAX {
+                    println!("X-Min cant be greater than X-Max, try something smaller.");
+                    return parser;
+                }
+                println!("X-Min changed to {}.\n", new_xmin);
+                X_MIN = new_xmin;
+                Self::print_current_graph_window()
+            }
+            "xmax" => unsafe {
+                if input_arguments.len() < 2 {
+                    println!("Too few arguments!");
+                    return parser;
+                }
+                let new_xmax = input_arguments[1].parse::<i64>().unwrap();
+
+                if new_xmax <= X_MIN {
+                    println!("X-Max cant be smaller than X-Min, try something bigger.");
+                    return parser;
+                }
+                println!("X-Max changed to {}.\n", new_xmax);
+                X_MAX = new_xmax;
+                Self::print_current_graph_window()
+            }
+            "ymin" => unsafe {
+                if input_arguments.len() < 2 {
+                    println!("Too few arguments!");
+                    return parser;
+                }
+                let new_ymin = input_arguments[1].parse::<i64>().unwrap();
+
+                if new_ymin >= Y_MAX {
+                    println!("Y-Min cant be greater than Y-Max, try something smaller.");
+                    return parser;
+                }
+                println!("Y-Min changed to {}.\n", new_ymin);
+                Y_MIN = new_ymin;
+                Self::print_current_graph_window()
+            }
+            "ymax" => unsafe {
+                if input_arguments.len() < 2 {
+                    println!("Too few arguments!");
+                    return parser;
+                }
+                let new_ymax = input_arguments[1].parse::<i64>().unwrap();
+
+                if new_ymax <= Y_MIN {
+                    println!("Y-Max cant be smaller than Y-Min, try something bigger.");
+                    return parser;
+                }
+                println!("Y-Max changed to {}.\n", new_ymax);
+                Y_MAX = new_ymax;
+                Self::print_current_graph_window()
+            }
             "help" => unsafe {
                 current_state = "start";
                 Self::draw_screen(current_state)
+            }
+            "window" => unsafe {
+                Self::print_current_graph_window();
             }
             "exit" => {
                 println!("Bye, have a beautiful time!");
@@ -126,6 +189,14 @@ impl CliInterface {
         }
 
         parser
+    }
+
+
+    fn print_current_graph_window() {
+        unsafe {
+            println!("X-Min: {}  X-Max: {}  \nY-Min: {}  Y-Max: {}\n",
+                     X_MIN, X_MAX, Y_MIN, Y_MAX);
+        }
     }
 
 
@@ -171,7 +242,6 @@ impl CliInterface {
 
         // Draw Main Body                                    "+ 2" is a magic number to make the UI fit the terminal
         let main_body_height = height - (CliInterface::UI_HEADER_SPACE + CliInterface::UI_FOOTER_SPACE + 2);
-        // TODO do this more often
         let left_padding = iter::repeat(" ").take(Self::UI_LEFT_MARGIN as usize).collect::<String>();
         screen += &format!("{}{}",
                            left_padding.clone(),
@@ -200,6 +270,26 @@ impl CliInterface {
         screen += &format!("{}{}",
                            left_padding.clone(),
                            String::from("\"rm <function-list-index>\"\n\n"));
+        printed_lines += 3;
+
+
+        screen += &format!("{}{}",
+                           left_padding.clone(),
+                           String::from("Show the current graph window by typing:\n"));
+
+        screen += &format!("{}{}",
+                           left_padding.clone(),
+                           String::from("\"window\"\n\n"));
+        printed_lines += 3;
+
+
+        screen += &format!("{}{}",
+                           left_padding.clone(),
+                           String::from("Change the current graph window by typing:\n"));
+
+        screen += &format!("{}{}",
+                           left_padding.clone(),
+                           String::from("\"xmin <value>, xmax <value>, ymin <value>, ymax <value>\"\n\n"));
         printed_lines += 3;
 
 
