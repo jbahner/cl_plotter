@@ -63,7 +63,7 @@ impl Data {
         self.data[self.calculate_index(from)..self.calculate_index(to)].iter().cloned().fold(std::f32::MIN, f32::max)
     }
 
-    /// Calculates the differentiation of the expression, returning the values in a new vector, leaving the stored data unchanged
+    /// Calculates the differentiation of the expression, saving the values in  data, thus changing given data
     pub fn differentiate(&mut self) {
         let interval = self.interval_size();
         let mut vector : Vec<f32> = vec![];
