@@ -8,5 +8,4 @@ fn main() {
 
     cli_interface::CliInterface::cli_interface_loop()
 
-    // TODO: here comes parsing of typed in command
 }
