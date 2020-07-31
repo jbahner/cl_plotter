@@ -91,23 +91,21 @@ impl CliInterface {
                     let mut screen = String::new();
                     if current_saved_func.1 {
                         screen += "active"
-                    }
-                    else {
+                    } else {
                         screen += "not active"
                     }
-                    println!(" {}: {} | {}", x , current_saved_func.0, screen);
+                    println!(" {}: {} | {}", x, current_saved_func.0, screen);
                 }
                 print!("\n");
-
             }
             "rm" => unsafe {
                 if input_arguments.len() < 2 {
                     println!("Too few arguments!");
-                    return parser
+                    return parser;
                 }
                 if input_arguments[1].parse::<u16>().unwrap() < 0 || input_arguments[1].parse::<u16>().unwrap() >= saved_functions.len() as u16 {
                     println!("Deletion index is wrong!");
-                    return parser
+                    return parser;
                 }
                 let remove_index = input_arguments[1].parse::<u16>().unwrap() as usize;
                 saved_functions.remove(remove_index);
@@ -115,16 +113,15 @@ impl CliInterface {
                 println!("Deleted function at index: {}", remove_index);
 
                 print!("\n");
-
             }
             "activate" => unsafe {
                 if input_arguments.len() < 2 {
                     println!("Too few arguments!");
-                    return parser
+                    return parser;
                 }
                 if input_arguments[1].parse::<u16>().unwrap() < 0 || input_arguments[1].parse::<u16>().unwrap() >= saved_functions.len() as u16 {
                     println!("There is no function with given index!\n");
-                    return parser
+                    return parser;
                 }
                 let activate_index = input_arguments[1].parse::<u16>().unwrap() as usize;
 
@@ -135,16 +132,15 @@ impl CliInterface {
                 println!("Activated function at index: {}", activate_index);
 
                 print!("\n");
-
             }
             "disable" => unsafe {
                 if input_arguments.len() < 2 {
                     println!("Too few arguments!");
-                    return parser
+                    return parser;
                 }
                 if input_arguments[1].parse::<u16>().unwrap() < 0 || input_arguments[1].parse::<u16>().unwrap() >= saved_functions.len() as u16 {
                     println!("There is no function with given index!\n");
-                    return parser
+                    return parser;
                 }
                 let activate_index = input_arguments[1].parse::<u16>().unwrap() as usize;
 
@@ -155,7 +151,6 @@ impl CliInterface {
                 println!("Disabled function  {}", activate_index);
 
                 print!("\n");
-
             }
             "plot" => unsafe {
                 current_state = "plot";
@@ -244,7 +239,7 @@ impl CliInterface {
                 current_state = "start";
                 Self::draw_screen(current_state)
             }
-            "window" => unsafe {
+            "window" => {
                 Self::print_current_graph_window();
             }
             "exit" => {
@@ -450,25 +445,47 @@ impl CliInterface {
         let graph_width = width - (Self::UI_LEFT_MARGIN + Self::UI_RIGHT_MARGIN + 1);
         let graph_height = height - (Self::UI_HEADER_SPACE + Self::UI_FOOTER_SPACE + 3);
 
-        let function_vec: Vec<f32>;
-        // let function_vec2: Vec<f32>;
+        let mut p = Parser::new();
 
-        let mut data: Data;
         unsafe {
-            let expr = Token::Multiplication(Box::new(Token::Variable), Box::new(Token::Variable));
-            data = data::Data::new(&expr, X_MIN as f32, X_MAX as f32, graph_width as usize);
-            data.evaluate();
-            function_vec = data.data.clone();
-            // function_vec2 = data.differentiate();
+            // let mut parser_stack;
+
+            for (function, boolean) in saved_functions.clone() {
+                if boolean {
+                    p.parse_expression(function);
+
+                    // parser_stack = p.stack.first().unwrap();
+
+
+                    // data::Data::new(p.clone().stack.first().unwrap()).evaluate()
+
+                    let mut current_data = data::Data::new(p.clone().stack.first().unwrap(),
+                                                       X_MIN as f32,
+                                                       X_MAX as f32,
+                                                       graph_width as usize);
+                    current_data.evaluate();
+                    plotted_functions.push(current_data);
+                }
+            }
         }
 
-        let mut data_matrix = Self::plot_values_into_matrix(vec![vec![" "; graph_width as usize]; graph_height as usize],
-                                                        function_vec,
-                                                        height);
+        // unsafe {
+        //     let expr = Token::Multiplication(Box::new(Token::Variable), Box::new(Token::Variable));
+        //     data = data::Data::new(&expr, X_MIN as f32, X_MAX as f32, graph_width as usize);
+        //     data.evaluate();
+        //     function_vec = data.data.clone();
+        //     // function_vec2 = data.differentiate();
+        // }
 
-        // data_matrix = Self::plot_values_into_matrix(data_matrix,
-        //                                                     function_vec2,
-        //                                                     height);
+        let mut data_matrix = vec![vec![" "; graph_width as usize]; graph_height as usize];
+
+        unsafe {
+            for plot in plotted_functions {
+                data_matrix = Self::plot_values_into_matrix(data_matrix,
+                                                            plot.data.clone(),
+                                                            height);
+            }
+        }
 
 
         for current_height in 0..height - 3 {
@@ -487,7 +504,7 @@ impl CliInterface {
     fn plot_values_into_matrix(mut data_matrix: Vec<Vec<&str>>, function_vec: Vec<f32>, height: u16) -> Vec<Vec<&str>> {
         let graph_height = height - (Self::UI_HEADER_SPACE + Self::UI_FOOTER_SPACE + 3);
 
-        let mut graph_height_per_pixel: f64;
+        let graph_height_per_pixel: f64;
         unsafe { graph_height_per_pixel = (Y_MIN + Y_MAX) as f64 / graph_height as f64; };
 
         for func_value_index in 0..function_vec.len() {
@@ -495,7 +512,7 @@ impl CliInterface {
 
             for i in 0..graph_height {
                 unsafe {
-                    let mut current_y = Y_MIN as f64 + (graph_height_per_pixel * i as f64);
+                    let current_y = Y_MIN as f64 + (graph_height_per_pixel * i as f64);
                     let next_y = Y_MIN as f64 + (graph_height_per_pixel * (i + 1) as f64);
 
                     if current_y < *func_value as f64 && *func_value as f64 <= next_y {
@@ -558,7 +575,6 @@ impl CliInterface {
                 iter::repeat(" ").take(Self::UI_LEFT_MARGIN as usize).collect::<String>(),
                 "|",
                 iter::repeat("_").take(((width - 1) - Self::UI_LEFT_MARGIN as i32 - Self::UI_RIGHT_MARGIN as i32) as usize).collect::<String>() + "\n")
-
     }
 
     fn draw_x_axis_legend(width: i32) -> String {
