@@ -272,14 +272,149 @@ impl CliInterface {
                 println!("Size of parser stack: {}", tmp);
 
 
-
                 let data = data::Data::new(p.clone().stack.first().cloned().unwrap(),
                                            X_MIN as f32,
                                            X_MAX as f32,
                                            10);
 
-                println!("Function value f({}) = {}", x_value_to_calc_f_x, data.evaluate_single(x_value_to_calc_f_x));
+                println!("Function value f({}) = {}\n", x_value_to_calc_f_x, data.evaluate_single(x_value_to_calc_f_x));
+            }
+            //TODO add min to help board
+            "min" => unsafe {
+                if input_arguments.len() < 4 {
+                    println!("Too few arguments!");
+                    return parser;
+                } else if input_arguments.len() > 4 {
+                    println!("Too much arguments!");
+                    return parser;
+                }
 
+                let function_index = input_arguments[1].parse::<u16>().unwrap();
+                if function_index < 0 || function_index >= saved_functions.clone().len() as u16 {
+                    println!("Given Function does not exist!");
+                }
+
+                let min_x_border = input_arguments[2].parse::<f32>().unwrap();
+                let max_x_border = input_arguments[3].parse::<f32>().unwrap();
+
+                let current_function = saved_functions.clone()[function_index as usize].clone().0;
+
+                let mut p = Parser::new();
+
+                p.parse_expression(current_function);
+
+
+                let mut data = data::Data::new(p.clone().stack.first().cloned().unwrap(),
+                                               min_x_border,
+                                               max_x_border,
+                                               10000);
+                data.evaluate();
+
+                println!("Minimum in Interval [{},{}] is {}\n", min_x_border, max_x_border, data.min(min_x_border, max_x_border));
+            }
+            // TODO save max on help page
+            "max" => unsafe {
+                if input_arguments.len() < 4 {
+                    println!("Too few arguments!");
+                    return parser;
+                } else if input_arguments.len() > 4 {
+                    println!("Too much arguments!");
+                    return parser;
+                }
+
+                let function_index = input_arguments[1].parse::<u16>().unwrap();
+                if function_index < 0 || function_index >= saved_functions.clone().len() as u16 {
+                    println!("Given Function does not exist!");
+                }
+
+                let min_x_border = input_arguments[2].parse::<f32>().unwrap();
+                let max_x_border = input_arguments[3].parse::<f32>().unwrap();
+
+                let current_function = saved_functions.clone()[function_index as usize].clone().0;
+
+                let mut p = Parser::new();
+
+                p.parse_expression(current_function);
+
+
+                let mut data = data::Data::new(p.clone().stack.first().cloned().unwrap(),
+                                               min_x_border,
+                                               max_x_border,
+                                               10000);
+                data.evaluate();
+
+                println!("Maximum in Interval [{},{}] is {}\n", min_x_border, max_x_border, data.max(min_x_border, max_x_border));
+            }
+            // TODO save max on help page
+            "integral" => unsafe {
+                if input_arguments.len() < 4 {
+                    println!("Too few arguments!");
+                    return parser;
+                } else if input_arguments.len() > 4 {
+                    println!("Too much arguments!");
+                    return parser;
+                }
+
+                let function_index = input_arguments[1].parse::<u16>().unwrap();
+                if function_index < 0 || function_index >= saved_functions.clone().len() as u16 {
+                    println!("Given Function does not exist!");
+                }
+
+                let min_x_border = input_arguments[2].parse::<f32>().unwrap();
+                let max_x_border = input_arguments[3].parse::<f32>().unwrap();
+
+                let current_function = saved_functions.clone()[function_index as usize].clone().0;
+
+                let mut p = Parser::new();
+
+                p.parse_expression(current_function);
+
+
+                let mut data = data::Data::new(p.clone().stack.first().cloned().unwrap(),
+                                               min_x_border,
+                                               max_x_border,
+                                               10000);
+                data.evaluate();
+
+                println!("Intergral in [{},{}] is about {}\n", min_x_border, max_x_border, data.integrate(min_x_border, max_x_border));
+            }
+            // TODO add diff on help page
+            "diff" => unsafe {
+                if input_arguments.len() < 2 {
+                    println!("Too few arguments!");
+                    return parser;
+                }
+                if input_arguments[1].parse::<u16>().unwrap() < 0 || input_arguments[1].parse::<u16>().unwrap() >= saved_functions.len() as u16 {
+                    println!("Function cannot be found by index, check the indices by typing \"ls\"!");
+                    return parser;
+                }
+
+                let size = terminal_size().unwrap().0;
+                let width = size.0;
+
+
+                let graph_width = width as u16 - (Self::UI_LEFT_MARGIN + Self::UI_RIGHT_MARGIN + 1);
+
+                let func_idx = input_arguments[1].parse::<u16>().unwrap() as usize;
+
+                let current_function = saved_functions.clone()[func_idx as usize].clone().0;
+
+                let mut p = Parser::new();
+
+                p.parse_expression(current_function);
+
+
+                let mut data = data::Data::new(p.clone().stack.first().cloned().unwrap(),
+                                               X_MIN as f32,
+                                               X_MAX as f32,
+                                               graph_width as usize);
+
+                data.evaluate();
+                data.differentiate();
+
+                plotted_functions.push(data);
+
+                Self::draw_screen("plot");
             }
             "help" => unsafe {
                 current_state = "start";

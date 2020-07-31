@@ -1,5 +1,6 @@
+use std::ops::{Add, Div, Sub};
+
 use crate::parser::tokenizer::Token;
-use std::ops::{Div, Add, Sub};
 
 pub struct Data {
     pub expr: Token,
@@ -63,14 +64,14 @@ impl Data {
     }
 
     /// Calculates the differentiation of the expression, returning the values in a new vector, leaving the stored data unchanged
-    pub fn differentiate(self) -> Vec<f32> {
+    pub fn differentiate(&mut self) {
         let interval = self.interval_size();
         let mut vector : Vec<f32> = vec![];
         for i in 0..self.data.len() {
             let x = self.min + (i as f32 * interval);
             vector.push(self.expr.clone().evaluate(x + interval).sub(self.expr.clone().evaluate(x - interval)).div(2.0 * interval))
         }
-        vector
+        self.data = vector;
     }
 
     /// Calculates the integral of the expression for the given range
