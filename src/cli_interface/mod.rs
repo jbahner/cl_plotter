@@ -88,7 +88,7 @@ impl CliInterface {
                     || !Regex::new(r"([a-zA-Z]|(\d+\.?\d*)|[+\-/*]|\s)+").unwrap().is_match(given_function.as_str()) {
                     println!("Invalid input, try again!");
                 } else {
-                    unsafe { saved_functions.push((given_function.clone(), false)) }
+                    unsafe { saved_functions.push((given_function.clone(), true)) }
                     println!("Insertion successful!\n\n");
                 }
                     // parser.parse_expression(given_function);
@@ -125,7 +125,7 @@ impl CliInterface {
 
                 print!("\n");
             }
-            "activate" => unsafe {
+            "enable" => unsafe {
                 if input_arguments.len() < 2 {
                     println!("Too few arguments!");
                     return parser;
@@ -140,7 +140,7 @@ impl CliInterface {
                 to_be_activated_function.1 = true;
                 saved_functions[activate_index as usize] = to_be_activated_function;
 
-                println!("Activated function at index: {}", activate_index);
+                println!("Enabled function at index: {}", activate_index);
 
                 print!("\n");
             }
@@ -506,11 +506,11 @@ impl CliInterface {
 
         screen += &format!("{}{}",
                            left_padding.clone(),
-                           String::from("Activate or disable function from being plotted:\n"));
+                           String::from("Enable or disable function from being plotted:\n"));
 
         screen += &format!("{}{}",
                            left_padding.clone(),
-                           String::from("\"activate <function-index> | disable <function-index>\"\n\n"));
+                           String::from("\"enable <function-index> | disable <function-index>\"\n\n"));
         printed_lines += 3;
 
 
